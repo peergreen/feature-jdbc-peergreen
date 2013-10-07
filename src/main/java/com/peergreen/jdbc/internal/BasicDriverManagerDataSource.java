@@ -11,8 +11,7 @@
 
 package com.peergreen.jdbc.internal;
 
-import static java.lang.String.format;
-
+import javax.sql.DataSource;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.sql.Connection;
@@ -21,7 +20,8 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 import java.util.logging.Logger;
-import javax.sql.DataSource;
+
+import static java.lang.String.format;
 
 /**
  * Basic DataSource implementation that does not perform any pooling or instance control.
@@ -59,7 +59,7 @@ public class BasicDriverManagerDataSource implements DataSource {
         return username;
     }
 
-    public void setUsername(final String username) {
+    public void setUser(final String username) {
         this.username = username;
         properties.setProperty("user", username);
     }

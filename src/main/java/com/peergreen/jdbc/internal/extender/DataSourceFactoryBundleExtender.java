@@ -11,17 +11,6 @@
 
 package com.peergreen.jdbc.internal.extender;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.sql.Driver;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Dictionary;
-import java.util.Hashtable;
-import java.util.List;
-
 import org.apache.felix.ipojo.ComponentInstance;
 import org.apache.felix.ipojo.ConfigurationException;
 import org.apache.felix.ipojo.Factory;
@@ -37,6 +26,17 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.util.tracker.BundleTracker;
 import org.osgi.util.tracker.BundleTrackerCustomizer;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.sql.Driver;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Dictionary;
+import java.util.Hashtable;
+import java.util.List;
 
 /**
  * User: guillaume
@@ -103,6 +103,7 @@ public class DataSourceFactoryBundleExtender implements BundleTrackerCustomizer<
 
             Dictionary<String, Object> configuration = new Hashtable<>();
             configuration.put("driver", driverClass.newInstance());
+            configuration.put("bundle", bundle);
 
             return factory.createComponentInstance(configuration);
         } catch (UnacceptableConfiguration | MissingHandlerException | ConfigurationException e) {

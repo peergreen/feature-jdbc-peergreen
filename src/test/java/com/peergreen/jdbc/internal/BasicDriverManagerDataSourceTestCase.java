@@ -11,23 +11,23 @@
 
 package com.peergreen.jdbc.internal;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertEquals;
-
-import java.sql.Connection;
-import java.sql.Driver;
-import java.util.Properties;
-
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import java.sql.Connection;
+import java.sql.Driver;
+import java.util.Properties;
+
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertEquals;
 
 /**
  * User: guillaume
@@ -56,7 +56,7 @@ public class BasicDriverManagerDataSourceTestCase {
         when(driver.connect(anyString(), any(Properties.class))).thenReturn(connection);
 
         BasicDriverManagerDataSource ds = new BasicDriverManagerDataSource(driver);
-        ds.setUsername("guillaume");
+        ds.setUser("guillaume");
         ds.setPassword("s3cr3t");
         ds.setUrl("jdbc:test");
 
@@ -72,7 +72,7 @@ public class BasicDriverManagerDataSourceTestCase {
         when(driver.connect(anyString(), any(Properties.class))).thenReturn(connection);
 
         BasicDriverManagerDataSource ds = new BasicDriverManagerDataSource(driver);
-        ds.setUsername("guillaume");
+        ds.setUser("guillaume");
         ds.setPassword("s3cr3t");
         ds.setUrl("jdbc:test");
 

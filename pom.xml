@@ -16,7 +16,7 @@
   <parent>
     <groupId>com.peergreen</groupId>
     <artifactId>peergreen-pom</artifactId>
-    <version>3</version>
+    <version>3.1</version>
   </parent>
 
   <groupId>com.peergreen.jdbc</groupId>
@@ -44,6 +44,18 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>com.peergreen.jndi</groupId>
+      <artifactId>osgi-jndi-service-1.0-spec</artifactId>
+      <version>1.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ow2.spec.ee</groupId>
+      <artifactId>ow2-jta-1.1-spec</artifactId>
+      <version>1.0.13</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.ipojo.annotations</artifactId>
       <version>1.10.1</version>
@@ -54,6 +66,12 @@
       <artifactId>org.apache.felix.ipojo</artifactId>
       <version>1.10.1</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <!-- not in use right now -->
+      <groupId>org.ow2.util</groupId>
+      <artifactId>util-pool-impl</artifactId>
+      <version>1.0.19</version>
     </dependency>
 
     <dependency>
