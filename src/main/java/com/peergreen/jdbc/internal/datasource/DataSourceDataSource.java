@@ -105,27 +105,27 @@ public class DataSourceDataSource extends ForwardingDataSource {
         this.properties = configuration;
     }
 
-    @Property(name = "url", mandatory = true)
+    @Property(name = Constants.URL, mandatory = true)
     public void setUrl(final String url) {
         this.url = url;
     }
 
-    @Property(name = "username", mandatory = true)
+    @Property(name = Constants.USERNAME, mandatory = true)
     public void setUsername(final String username) {
         this.username = username;
     }
 
-    @Property(name = "password", mandatory = true)
+    @Property(name = Constants.PASSWORD, mandatory = true)
     public void setPassword(final String password) {
         this.password = password;
     }
 
-    @Property(name = "jndi.bind", value = "true")
+    @Property(name = Constants.JNDI_BIND, value = "true")
     public void setBind(final boolean bind) {
         this.bind = bind;
     }
 
-    @Property(name = "jdbc.check.level")
+    @Property(name = Constants.JDBC_CHECK_LEVEL)
     public void setCheckLevel(final Integer checkLevel) {
         this.checkLevel = checkLevel;
         if (factory != null) {
@@ -133,7 +133,7 @@ public class DataSourceDataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = "jdbc.max.age")
+    @Property(name = Constants.JDBC_MAX_AGE)
     public void setMaxAge(final Long maxAge) {
         this.maxAge = maxAge;
         if (factory != null) {
@@ -141,7 +141,7 @@ public class DataSourceDataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = "jdbc.max.opentime")
+    @Property(name = Constants.JDBC_MAX_OPENTIME)
     public void setMaxOpenTime(final Long maxOpenTime) {
         this.maxOpenTime = maxOpenTime;
         if (factory != null) {
@@ -149,7 +149,7 @@ public class DataSourceDataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = "jdbc.test.statement")
+    @Property(name = Constants.JDBC_TEST_STATEMENT)
     public void setTestStatement(final String testStatement) {
         this.testStatement = testStatement;
         if (factory != null) {
@@ -157,7 +157,7 @@ public class DataSourceDataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = "jdbc.transaction.isolation")
+    @Property(name = Constants.JDBC_TRANSACTION_ISOLATION)
     public void setTransactionIsolation(final TransactionIsolation transactionIsolation) {
         this.transactionIsolation = transactionIsolation;
         if (factory != null) {
@@ -165,7 +165,7 @@ public class DataSourceDataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = "jdbc.preparedstatement.cachesize")
+    @Property(name = Constants.JDBC_PREPAREDSTATEMENT_CACHESIZE)
     public void setPreparedStatementCacheSize(final Integer preparedStatementCacheSize) {
         this.preparedStatementCacheSize = preparedStatementCacheSize;
         if (pool != null) {
@@ -173,7 +173,7 @@ public class DataSourceDataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = "pool.min")
+    @Property(name = Constants.POOL_MIN)
     public void setPoolMin(final Integer poolMin) {
         this.poolMin = poolMin;
         if (pool != null) {
@@ -181,7 +181,7 @@ public class DataSourceDataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = "pool.max")
+    @Property(name = Constants.POOL_MAX)
     public void setPoolMax(final Integer poolMax) {
         this.poolMax = poolMax;
         if (pool != null) {
@@ -189,7 +189,7 @@ public class DataSourceDataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = "pool.waiters.max")
+    @Property(name = Constants.POOL_WAITERS_MAX)
     public void setMaxWaiters(final Integer maxWaiters) {
         this.maxWaiters = maxWaiters;
         if (pool != null) {
@@ -197,7 +197,7 @@ public class DataSourceDataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = "pool.waiters.timeout")
+    @Property(name = Constants.POOL_WAITERS_TIMEOUT)
     public void setWaiterTimeout(final Long waiterTimeout) {
         this.waiterTimeout = waiterTimeout;
         if (pool != null) {
@@ -205,7 +205,7 @@ public class DataSourceDataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = "login.timeout")
+    @Property(name = Constants.LOGIN_TIMEOUT)
     public void setLoginTimeout(final Integer loginTimeout) {
         this.loginTimeout = loginTimeout;
         if (builder != null) {
@@ -217,7 +217,7 @@ public class DataSourceDataSource extends ForwardingDataSource {
         this.datasourceName = datasourceName;
     }
 
-    @Property(name = "sampling.period")
+    @Property(name = Constants.SAMPLING_PERIOD)
     public void setSamplingPeriod(final Integer samplingPeriod) {
         this.samplingPeriod = samplingPeriod;
     }

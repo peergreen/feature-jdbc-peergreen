@@ -12,10 +12,24 @@
 package com.peergreen.jdbc.internal.datasource;
 
 /**
- * User: guillaume
- * Date: 15/10/13
- * Time: 17:43
+ * Recognized {@link javax.sql.DataSource} configuration properties.
  */
 public interface Constants {
     String DATASOURCE_NAME = "datasource.name";
+    String URL = "url";
+    String USERNAME = "username";
+    String PASSWORD = "password";
+    String JNDI_BIND = "jndi.bind";
+    String JDBC_CHECK_LEVEL = "jdbc.check.level";
+    String JDBC_MAX_AGE = "jdbc.max.age";
+    String JDBC_MAX_OPENTIME = "jdbc.max.opentime";
+    String JDBC_TEST_STATEMENT = "jdbc.test.statement";
+    String JDBC_TRANSACTION_ISOLATION = "jdbc.transaction.isolation";
+    String JDBC_PREPAREDSTATEMENT_CACHESIZE = "jdbc.preparedstatement.cachesize";
+    String POOL_MIN = "pool.min";
+    String POOL_MAX = "pool.max";
+    String POOL_WAITERS_MAX = "pool.waiters.max";
+    String POOL_WAITERS_TIMEOUT = "pool.waiters.timeout";
+    String LOGIN_TIMEOUT = "login.timeout";
+    String SAMPLING_PERIOD = "sampling.period";
 }
