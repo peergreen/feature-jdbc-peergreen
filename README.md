@@ -36,6 +36,12 @@ Simply provides a CA XML file with the following content:
       <property name="password">tiger</property>
     </configuration-factory>
 
+### Supported properties
+
+This is common to ConfigAdmin and datasource files deployment:
+
+<https://forge.peergreen.com/git/blob/?f=src/main/java/com/peergreen/jdbc/internal/datasource/Constants.java&r=feature/jdbc/peergreen-jdbc.git&h=1e56aab6a0cf60ca9d067d61679710e5ef381815>
+
 TODO List
 ---------
 
