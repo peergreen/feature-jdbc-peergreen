@@ -11,12 +11,10 @@
 
 package com.peergreen.jdbc.internal.cm.pool.internal;
 
-import com.peergreen.jdbc.internal.cm.ConnectionManager;
 import com.peergreen.jdbc.internal.cm.IManagedConnection;
 import com.peergreen.jdbc.internal.cm.pool.AdjustablePool;
 import com.peergreen.jdbc.internal.cm.pool.PoolFactory;
-import org.ow2.util.log.Log;
-import org.ow2.util.log.LogFactory;
+import com.peergreen.jdbc.internal.log.Log;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -25,18 +23,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ManagedConnectionPool implements AdjustablePool<IManagedConnection, UsernamePasswordInfo> {
 
     /**
      * Logger.
      */
-    private static final Log logger = LogFactory.getLog(ConnectionManager.class);
+    private final Log logger;
 
     /**
      * High Value for no limit for the connection pool.
@@ -158,11 +151,8 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
      */
     private int preparedStatementCacheSize = DEFAULT_PREPARED_STATEMENT_CACHE_SIZE;
 
-    private Lock lock = new ReentrantLock(true);
-    private Condition condition = lock.newCondition();
-
-
-    public ManagedConnectionPool(final PoolFactory<IManagedConnection, UsernamePasswordInfo> factory) {
+    public ManagedConnectionPool(final Log logger, final PoolFactory<IManagedConnection, UsernamePasswordInfo> factory) {
+        this.logger = logger;
         this.factory = factory;
     }
 
@@ -367,7 +357,7 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
             for (Iterator<IManagedConnection> i = this.availables.iterator(); i.hasNext(); ) {
                 IManagedConnection mc = i.next();
                 if (mc.isAged()) {
-                    logger.debug("remove a timed out connection");
+                    logger.fine("remove a timed out connection");
                     i.remove();
                     discard(mc);
                     count--;
@@ -383,9 +373,7 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
         for (Iterator<IManagedConnection> i = this.connections.iterator(); i.hasNext(); ) {
             IManagedConnection mc = i.next();
             if (mc.inactive()) {
-                if (logger.isWarnEnabled()) {
-                    logger.warn("close a timed out open connection {0}", mc.getIdentifier());
-                }
+                logger.warn("close a timed out open connection %d", mc.getIdentifier());
                 i.remove();
                 // destroy mc
                 factory.destroy(mc);
@@ -457,7 +445,7 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
                             }
                             if (before == 0) {
                                 before = System.currentTimeMillis();
-                                logger.debug("Wait for a free Connection, {0}", this.connections.size());
+                                logger.fine("Wait for a free Connection, %d", this.connections.size());
                             }
 
                             try {
@@ -481,7 +469,7 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
                             } else {
                                 if (!this.availables.isEmpty() || this.connections.size() < this.poolMax) {
                                     // We have been notified by a released connection
-                                    logger.debug("Notified after {0}", waited);
+                                    logger.fine("Notified after %d milliseconds", waited);
                                     this.totalWaiterCount++;
                                     this.totalWaitedTime += waited;
                                     if (this.maxWaitedTime < waited) {
@@ -504,7 +492,7 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
                     }
                     continue;
                 }
-                logger.debug("empty free list: Create a new Connection");
+                logger.fine("empty free list: Create a new Connection");
                 try {
                     // create a new ManagedConnection
                     mc = factory.create(info);
@@ -550,7 +538,7 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
         // size.
         // PoolKeeper will manage aged connections.
         this.availables.add(item);
-        logger.debug("item added to availables: {0}", item.getIdentifier());
+        logger.fine("item added to availables: %d", item.getIdentifier());
 
         // Notify 1 thread waiting for a Connection.
         if (this.currentWaiters > 0) {

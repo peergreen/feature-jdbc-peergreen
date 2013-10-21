@@ -13,8 +13,7 @@ package com.peergreen.jdbc.internal.cm;
 
 import com.peergreen.jdbc.internal.cm.pool.Pool;
 import com.peergreen.jdbc.internal.cm.pool.internal.UsernamePasswordInfo;
-import org.ow2.util.log.Log;
-import org.ow2.util.log.LogFactory;
+import com.peergreen.jdbc.internal.log.Log;
 
 import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionEventListener;
@@ -29,6 +28,8 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.lang.String.format;
+
 /**
  * DataSource implementation. Manage a pool of connections.
  *
@@ -40,7 +41,7 @@ public class ConnectionManager implements ConnectionEventListener {
     /**
      * Logger.
      */
-    private Log logger = LogFactory.getLog(ConnectionManager.class);
+    private final Log logger;
 
     /**
      * Default sampling period.
@@ -77,7 +78,8 @@ public class ConnectionManager implements ConnectionEventListener {
     /**
      * Constructor for ObjectFactory.
      */
-    public ConnectionManager(TransactionManager transactionManager) {
+    public ConnectionManager(final Log logger, TransactionManager transactionManager) {
+        this.logger = logger;
         this.transactionManager = transactionManager;
     }
 
@@ -254,7 +256,7 @@ public class ConnectionManager implements ConnectionEventListener {
         } catch (SystemException e) {
             this.logger.error("ConnectionManager: getTransaction failed", e);
         }
-        this.logger.debug("Tx = {0}", tx);
+        this.logger.fine("Tx = %s", tx);
 
         // Get a ManagedConnection in the pool for this user
         mc = openConnection(tx, info);
@@ -264,7 +266,7 @@ public class ConnectionManager implements ConnectionEventListener {
         if (tx != null) {
             if (mc.getOpenCount() == 1) { // Only if first/only thread
                 try {
-                    this.logger.debug("enlist XAResource on {0}", tx);
+                    this.logger.fine("enlist XAResource on %s", tx);
                     tx.enlistResource(mc.getXAResource());
                     ret.setAutoCommit(false);
                 } catch (RollbackException e) {
@@ -275,8 +277,8 @@ public class ConnectionManager implements ConnectionEventListener {
                     // In case tx is committed, no need to register resource!
                     ret.setAutoCommit(true);
                 } catch (Exception e) {
-                    this.logger.error("Cannot enlist XAResource", e);
-                    this.logger.error("Connection will not be enlisted in a transaction");
+                    this.logger.error("Cannot enlist XAResource, Connection will not be enlisted in a transaction", e);
+
                     // should return connection in the pool XXX
                     throw new SQLException("Cannot enlist XAResource");
                 }
@@ -306,7 +308,7 @@ public class ConnectionManager implements ConnectionEventListener {
         if (transaction != null) {
             mc = this.transactions.get(transaction);
             if (mc != null) {
-                logger.debug("Reuse a Connection for same transaction");
+                logger.fine("Reuse a Connection for same transaction");
                 mc.hold();
                 this.servedOpen++;
                 return mc;
@@ -320,19 +322,18 @@ public class ConnectionManager implements ConnectionEventListener {
 
         mc.setTransaction(transaction);
         if (transaction == null) {
-            logger.debug("Got a Connection - no TX: ");
+            logger.fine("Got a Connection - no TX: ");
         } else {
-            logger.debug("Got a Connection for TX: ");
+            logger.fine("Got a Connection for TX: ");
             // register synchronization
             try {
                 transaction.registerSynchronization(new TransactionSynchronization(transaction));
                 this.transactions.put(transaction, mc); // only if registerSynchronization was OK.
             } catch (javax.transaction.RollbackException e) {
                 // / optimization is probably possible at this point
-                logger.warn("DataSource " + getDatasourceName() + " error: Pool mc registered, but transaction is rollback only", e);
+                logger.warn("Pool mc registered, but transaction is rollback only", e);
             } catch (javax.transaction.SystemException e) {
-                logger.error("DataSource " + getDatasourceName()
-                                     + " error in pool: system exception from transaction manager ", e);
+                logger.error("Error in pool: system exception from transaction manager ", e);
             } catch (IllegalStateException e) {
                 // In case transaction has already committed, do as if no transaction.
                 logger.warn("Got a Connection - committed TX: ", e);
@@ -372,7 +373,7 @@ public class ConnectionManager implements ConnectionEventListener {
     public void connectionErrorOccurred(final ConnectionEvent event) {
 
         IManagedConnection mc = (IManagedConnection) event.getSource();
-        logger.debug("mc= {0}", mc.getIdentifier());
+        logger.fine("mc=%d", mc.getIdentifier());
 
         // remove it from the list of open connections for this thread
         // only if it was opened outside a tx.
@@ -386,16 +387,16 @@ public class ConnectionManager implements ConnectionEventListener {
      * @param tx the non null transaction
      */
     public synchronized void freeConnections(final Transaction tx) {
-        logger.debug("free connection for Tx = " + tx);
+        logger.fine("free connection for Tx = %s", tx);
         IManagedConnection mc = this.transactions.remove(tx);
         if (mc == null) {
-            logger.error("pool: no connection found to free for Tx = " + tx);
+            logger.error("pool: no connection found to free for Tx = %s", tx);
             return;
         }
         mc.setTransaction(null);
         if (mc.isOpen()) {
             // Connection not yet closed (but committed).
-            logger.debug("Connection not closed by caller");
+            logger.fine("Connection not closed by caller");
             return;
         }
         pool.release(mc);
@@ -421,7 +422,7 @@ public class ConnectionManager implements ConnectionEventListener {
             return false;
         }
         if (mc.getTransaction() != null) {
-            logger.debug("keep connection for same transaction");
+            logger.fine("keep connection for same transaction");
         } else {
             pool.release(mc);
         }

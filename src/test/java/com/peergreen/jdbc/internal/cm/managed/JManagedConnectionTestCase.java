@@ -12,6 +12,7 @@
 package com.peergreen.jdbc.internal.cm.managed;
 
 import com.peergreen.jdbc.internal.cm.pool.internal.ManagedConnectionFactory;
+import com.peergreen.jdbc.internal.log.Log;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
@@ -46,6 +47,8 @@ public class JManagedConnectionTestCase {
     private Transaction transaction;
     @Mock
     private ConnectionEventListener listener;
+    @Mock
+    private Log log;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -57,7 +60,7 @@ public class JManagedConnectionTestCase {
         // Provide a great maximum so that I'm sure that test will always be ok
         when(factory.getMaxAge()).thenReturn(5000l);
 
-        JManagedConnection mc = new JManagedConnection(connection, factory);
+        JManagedConnection mc = new JManagedConnection(log, connection, factory);
         assertFalse(mc.isAged());
     }
 
@@ -66,7 +69,7 @@ public class JManagedConnectionTestCase {
         // Provide a low maximum
         when(factory.getMaxAge()).thenReturn(10l);
 
-        JManagedConnection mc = new JManagedConnection(connection, factory);
+        JManagedConnection mc = new JManagedConnection(log, connection, factory);
         Thread.sleep(100);
         assertTrue(mc.isAged());
     }
@@ -76,7 +79,7 @@ public class JManagedConnectionTestCase {
         // Provide a minimum value
         when(factory.getMaxAge()).thenReturn(1000l);
 
-        JManagedConnection mc = new JManagedConnection(connection, factory);
+        JManagedConnection mc = new JManagedConnection(log, connection, factory);
         assertFalse(mc.isOpen());
         assertTrue(mc.isClosed());
     }
@@ -86,7 +89,7 @@ public class JManagedConnectionTestCase {
         // Provide a minimum value
         when(factory.getMaxAge()).thenReturn(1000l);
 
-        JManagedConnection mc = new JManagedConnection(connection, factory);
+        JManagedConnection mc = new JManagedConnection(log, connection, factory);
         mc.hold();
         assertTrue(mc.isOpen());
         assertFalse(mc.isClosed());
@@ -97,7 +100,7 @@ public class JManagedConnectionTestCase {
         // Provide a minimum value
         when(factory.getMaxAge()).thenReturn(1000l);
 
-        JManagedConnection mc = new JManagedConnection(connection, factory);
+        JManagedConnection mc = new JManagedConnection(log, connection, factory);
         mc.hold();
         mc.release();
         assertFalse(mc.isOpen());
@@ -109,7 +112,7 @@ public class JManagedConnectionTestCase {
         // Provide a minimum value
         when(factory.getMaxAge()).thenReturn(1000l);
 
-        JManagedConnection mc = new JManagedConnection(connection, factory);
+        JManagedConnection mc = new JManagedConnection(log, connection, factory);
         assertFalse(mc.release());
         assertEquals(mc.getOpenCount(), 0);
         assertTrue(mc.isClosed());
@@ -120,7 +123,7 @@ public class JManagedConnectionTestCase {
         // Provide a minimum value
         when(factory.getMaxAge()).thenReturn(1000l);
 
-        JManagedConnection mc = new JManagedConnection(connection, factory);
+        JManagedConnection mc = new JManagedConnection(log, connection, factory);
         mc.hold();
         mc.setTransaction(transaction);
         assertFalse(mc.inactive());
@@ -131,7 +134,7 @@ public class JManagedConnectionTestCase {
         // Provide a minimal value
         when(factory.getMaxAge()).thenReturn(10l);
 
-        JManagedConnection mc = new JManagedConnection(connection, factory);
+        JManagedConnection mc = new JManagedConnection(log, connection, factory);
         mc.hold();
         mc.setTransaction(transaction);
         Thread.sleep(50);
@@ -143,7 +146,7 @@ public class JManagedConnectionTestCase {
         // Provide a minimum value
         when(factory.getMaxAge()).thenReturn(1000l);
 
-        JManagedConnection mc = new JManagedConnection(connection, factory);
+        JManagedConnection mc = new JManagedConnection(log, connection, factory);
         mc.hold();
         mc.setTransaction(transaction);
         assertFalse(mc.inactive());
@@ -154,7 +157,7 @@ public class JManagedConnectionTestCase {
         // Provide a minimal value
         when(factory.getMaxAge()).thenReturn(10l);
 
-        JManagedConnection mc = new JManagedConnection(connection, factory);
+        JManagedConnection mc = new JManagedConnection(log, connection, factory);
         mc.hold();
         Thread.sleep(50);
         assertTrue(mc.inactive());
@@ -165,7 +168,7 @@ public class JManagedConnectionTestCase {
         // Provide a minimum value
         when(factory.getMaxAge()).thenReturn(100l);
 
-        JManagedConnection mc = new JManagedConnection(connection, factory);
+        JManagedConnection mc = new JManagedConnection(log, connection, factory);
         mc.setTransaction(transaction);
         mc.remove();
         assertNull(mc.getTransaction());
@@ -179,7 +182,7 @@ public class JManagedConnectionTestCase {
         // Provide a minimum value
         when(factory.getMaxAge()).thenReturn(100l);
 
-        JManagedConnection mc = new JManagedConnection(connection, factory);
+        JManagedConnection mc = new JManagedConnection(log, connection, factory);
         mc.addConnectionEventListener(listener);
         mc.notifyClose();
 
@@ -191,7 +194,7 @@ public class JManagedConnectionTestCase {
         // Provide a minimum value
         when(factory.getMaxAge()).thenReturn(100l);
 
-        JManagedConnection mc = new JManagedConnection(connection, factory);
+        JManagedConnection mc = new JManagedConnection(log, connection, factory);
         mc.addConnectionEventListener(listener);
         mc.notifyError(new SQLException());
 

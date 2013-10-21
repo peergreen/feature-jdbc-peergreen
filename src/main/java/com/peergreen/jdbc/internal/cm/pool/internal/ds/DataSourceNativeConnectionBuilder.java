@@ -13,8 +13,7 @@ package com.peergreen.jdbc.internal.cm.pool.internal.ds;
 
 import com.peergreen.jdbc.internal.cm.pool.internal.NativeConnectionBuilder;
 import com.peergreen.jdbc.internal.cm.pool.internal.UsernamePasswordInfo;
-import org.ow2.util.log.Log;
-import org.ow2.util.log.LogFactory;
+import com.peergreen.jdbc.internal.log.Log;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -27,10 +26,7 @@ import java.sql.SQLException;
  */
 public class DataSourceNativeConnectionBuilder implements NativeConnectionBuilder {
 
-    /**
-     * Logger.
-     */
-    private static final Log logger = LogFactory.getLog(DataSourceNativeConnectionBuilder.class);
+    private final Log logger;
 
     /**
      * Factory for native connection.
@@ -38,7 +34,8 @@ public class DataSourceNativeConnectionBuilder implements NativeConnectionBuilde
     private final DataSource source;
 
 
-    public DataSourceNativeConnectionBuilder(final DataSource source) {
+    public DataSourceNativeConnectionBuilder(final com.peergreen.jdbc.internal.log.Log logger, final DataSource source) {
+        this.logger = logger;
         this.source = source;
     }
 

@@ -13,8 +13,6 @@ package com.peergreen.jdbc.internal.cm.handle;
 
 import com.peergreen.jdbc.internal.cm.ConnectionProxy;
 import com.peergreen.jdbc.internal.cm.IManagedConnection;
-import org.ow2.util.log.Log;
-import org.ow2.util.log.LogFactory;
 
 import java.sql.Array;
 import java.sql.Blob;
@@ -43,11 +41,6 @@ import java.util.concurrent.Executor;
  * @author Florent Benoit
  */
 public class DefaultConnectionProxy implements ConnectionProxy {
-
-    /**
-     * Logger used for debug.
-     */
-    private static Log logger = LogFactory.getLog(DefaultConnectionProxy.class);
 
     /**
      * JDBC connection provided by the DriverManager.

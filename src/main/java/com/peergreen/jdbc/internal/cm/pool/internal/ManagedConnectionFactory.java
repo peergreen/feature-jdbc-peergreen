@@ -16,8 +16,7 @@ import com.peergreen.jdbc.internal.cm.IManagedConnection;
 import com.peergreen.jdbc.internal.cm.TransactionIsolation;
 import com.peergreen.jdbc.internal.cm.managed.JManagedConnection;
 import com.peergreen.jdbc.internal.cm.pool.PoolFactory;
-import org.ow2.util.log.Log;
-import org.ow2.util.log.LogFactory;
+import com.peergreen.jdbc.internal.log.Log;
 
 import javax.sql.ConnectionEventListener;
 import java.sql.Connection;
@@ -28,7 +27,7 @@ public class ManagedConnectionFactory implements PoolFactory<IManagedConnection,
     /**
      * Logger.
      */
-    private static final Log logger = LogFactory.getLog(ManagedConnectionFactory.class);
+    private final Log logger;
 
     /**
      * Nb of milliseconds in a day.
@@ -71,10 +70,13 @@ public class ManagedConnectionFactory implements PoolFactory<IManagedConnection,
     private String testStatement;
 
     private final NativeConnectionBuilder builder;
+    private Log mcLogger;
 
-    public ManagedConnectionFactory(final NativeConnectionBuilder builder, final ConnectionEventListener listener) {
+    public ManagedConnectionFactory(final Log logger, final NativeConnectionBuilder builder, final ConnectionEventListener listener) {
+        this.logger = logger;
         this.listener = listener;
         this.builder = builder;
+        mcLogger = logger.create("ManagedConnection");
     }
 
     /**
@@ -146,17 +148,17 @@ public class ManagedConnectionFactory implements PoolFactory<IManagedConnection,
         // Depending on the underlying database, this may not succeed.
         if (this.isolationLevel != TransactionIsolation.TRANSACTION_UNDEFINED) {
             try {
-                logger.debug("Set transaction isolation to {0}", this.isolationLevel);
+                logger.fine("Set transaction isolation to %s", this.isolationLevel);
                 connection.setTransactionIsolation(isolationLevel.level());
             } catch (SQLException e) {
-                logger.error("Cannot set transaction isolation to {0}", isolationLevel.name(), e);
+                logger.error("Cannot set transaction isolation to %s", isolationLevel.name(), e);
                 this.isolationLevel = TransactionIsolation.TRANSACTION_UNDEFINED;
             }
         }
 
         // Create the IManagedConnection object
         // return the XAConnection
-        JManagedConnection mc = new JManagedConnection(connection, this);
+        JManagedConnection mc = new JManagedConnection(mcLogger, connection, this);
         mc.addConnectionEventListener(listener);
         return mc;
     }
@@ -176,7 +178,7 @@ public class ManagedConnectionFactory implements PoolFactory<IManagedConnection,
                     stmt.close();
                 }
             } catch (Exception e) {
-                logger.error("DataSource error: removing invalid mc", e);
+                logger.error("Removing invalid managed connection", e);
                 return false;
             }
         }

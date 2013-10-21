@@ -13,8 +13,7 @@ package com.peergreen.jdbc.internal.cm.pool.internal.dm;
 
 import com.peergreen.jdbc.internal.cm.pool.internal.NativeConnectionBuilder;
 import com.peergreen.jdbc.internal.cm.pool.internal.UsernamePasswordInfo;
-import org.ow2.util.log.Log;
-import org.ow2.util.log.LogFactory;
+import com.peergreen.jdbc.internal.log.Log;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -29,14 +28,15 @@ public class DriverManagerNativeConnectionBuilder implements NativeConnectionBui
     /**
      * Logger.
      */
-    private static final Log logger = LogFactory.getLog(DriverManagerNativeConnectionBuilder.class);
+    private final Log logger;
 
     /**
      * Database URL to be used in DriverManager.
      */
     private final String url;
 
-    public DriverManagerNativeConnectionBuilder(final String url) {
+    public DriverManagerNativeConnectionBuilder(final Log logger, final String url) {
+        this.logger = logger;
         this.url = url;
     }
 
@@ -46,11 +46,11 @@ public class DriverManagerNativeConnectionBuilder implements NativeConnectionBui
         Connection connection;
         if (info.getUsername().length() == 0) {
             connection = DriverManager.getConnection(url);
-            logger.debug("    * New Connection on {0}", url);
+            logger.fine("    * New Connection on %s", url);
         } else {
             // Accept password of zero length.
             connection = DriverManager.getConnection(url, info.getUsername(), info.getPassword());
-            logger.debug("    * New Connection on {0} for user {1}", url, info.getUsername());
+            logger.fine("    * New Connection on %s for user %s", url, info.getUsername());
         }
         return connection;
     }

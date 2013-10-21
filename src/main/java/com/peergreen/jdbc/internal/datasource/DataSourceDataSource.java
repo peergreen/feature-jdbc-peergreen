@@ -17,6 +17,8 @@ import com.peergreen.jdbc.internal.cm.pool.internal.ManagedConnectionFactory;
 import com.peergreen.jdbc.internal.cm.pool.internal.ManagedConnectionPool;
 import com.peergreen.jdbc.internal.cm.pool.internal.ds.DataSourceNativeConnectionBuilder;
 import com.peergreen.jdbc.internal.datasource.naming.DataSourceReference;
+import com.peergreen.jdbc.internal.log.FormattedLogger;
+import com.peergreen.jdbc.internal.log.Log;
 import org.apache.felix.ipojo.annotations.Component;
 import org.apache.felix.ipojo.annotations.Invalidate;
 import org.apache.felix.ipojo.annotations.Property;
@@ -34,10 +36,12 @@ import javax.sql.DataSource;
 import javax.transaction.TransactionManager;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 import static com.peergreen.jdbc.internal.datasource.Constants.DATASOURCE_NAME;
 import static java.lang.String.format;
@@ -91,6 +95,8 @@ public class DataSourceDataSource extends ForwardingDataSource {
     private ManagedConnectionFactory factory;
     private ManagedConnectionPool pool;
 
+    private Logger parentLogger;
+
     public DataSourceDataSource(@Requires(filter = "(osgi.jdbc.driver.class=${driverClass})")
                                 final DataSourceFactory dataSourceFactory,
                                 @Requires TransactionManager transactionManager,
@@ -99,6 +105,13 @@ public class DataSourceDataSource extends ForwardingDataSource {
         this.transactionManager = transactionManager;
         this.contextManager = contextManager;
     }
+
+    private String getDataSourceLoggerName() {
+        // Expecting something like:
+        // com.peergreen.jdbc.internal.datasource.DataSourceDataSource[jdbc/MyDataSource]
+        return format("%s[%s]", getClass().getName(), datasourceName);
+    }
+
 
     @Updated
     public void update(Dictionary<String, Object> configuration) {
@@ -224,6 +237,9 @@ public class DataSourceDataSource extends ForwardingDataSource {
 
     @Validate
     public void start() throws SQLException {
+
+        parentLogger = Logger.getLogger(getDataSourceLoggerName());
+
         Properties props = new Properties();
         props.setProperty(DataSourceFactory.JDBC_URL, url);
         props.setProperty(DataSourceFactory.JDBC_USER, username);
@@ -240,10 +256,10 @@ public class DataSourceDataSource extends ForwardingDataSource {
 
         delegate = dataSourceFactory.createDataSource(props);
 
-        manager = new ConnectionManager(transactionManager);
-        builder = new DataSourceNativeConnectionBuilder(delegate);
-        factory = new ManagedConnectionFactory(builder, manager);
-        pool = new ManagedConnectionPool(factory);
+        manager = new ConnectionManager(getConnectionManagerLogger(), transactionManager);
+        builder = new DataSourceNativeConnectionBuilder(getConnectionBuilderLogger(), delegate);
+        factory = new ManagedConnectionFactory(getItemFactoryLogger(), builder, manager);
+        pool = new ManagedConnectionPool(getPoolLogger(), factory);
         manager.setPool(pool);
 
         if (checkLevel != null) {
@@ -302,6 +318,27 @@ public class DataSourceDataSource extends ForwardingDataSource {
             }
         }
 
+    }
+
+    private Log getConnectionManagerLogger() {
+        return new FormattedLogger(Logger.getLogger(parentLogger.getName() + ".ConnectionManager"));
+    }
+
+    private Log getConnectionBuilderLogger() {
+        return new FormattedLogger(Logger.getLogger(parentLogger.getName() + ".ConnectionBuilder"));
+    }
+
+    private Log getItemFactoryLogger() {
+        return new FormattedLogger(Logger.getLogger(parentLogger.getName() + ".ItemFactory"));
+    }
+
+    private Log getPoolLogger() {
+        return new FormattedLogger(Logger.getLogger(parentLogger.getName() + ".Pool"));
+    }
+
+    @Override
+    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+        return parentLogger;
     }
 
     @Invalidate

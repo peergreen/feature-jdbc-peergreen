@@ -49,7 +49,6 @@ TODO List
 * Refactor pool and ManagedConnection to support PooledConnection and XAConnection
 * Rework PreparedStatement pool (probably with the help of the new StatementEventListener)
 * Switch back to the OW2 Pool API
-* Add DataSource name in log statement
 * Bean injection should support JDBC Wrapper (configuration of wrapped/delegated)
 * MBeans (exposing statistics)
 * Deployment update (delate, ...)

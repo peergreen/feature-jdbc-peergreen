@@ -13,6 +13,7 @@ package com.peergreen.jdbc.internal.cm.pool.internal;
 
 import com.peergreen.jdbc.internal.cm.IManagedConnection;
 import com.peergreen.jdbc.internal.cm.pool.PoolFactory;
+import com.peergreen.jdbc.internal.log.Log;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
@@ -50,6 +51,8 @@ public class ManagedConnectionPoolTestCase {
     private PoolFactory<IManagedConnection, UsernamePasswordInfo> factory;
     @Mock
     private IManagedConnection mc;
+    @Mock
+    private Log log;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -66,7 +69,7 @@ public class ManagedConnectionPoolTestCase {
             }
         });
 
-        ManagedConnectionPool pool = new ManagedConnectionPool(factory);
+        ManagedConnectionPool pool = new ManagedConnectionPool(log, factory);
         pool.setPoolMin(10);
         pool.start();
 
@@ -77,7 +80,7 @@ public class ManagedConnectionPoolTestCase {
     @Test
     public void testGet() throws Exception {
         when(factory.create(any(UsernamePasswordInfo.class))).thenReturn(mc);
-        ManagedConnectionPool pool = new ManagedConnectionPool(factory);
+        ManagedConnectionPool pool = new ManagedConnectionPool(log, factory);
         pool.start();
 
         assertEquals(pool.getCurrentFree(), 0);
@@ -92,7 +95,7 @@ public class ManagedConnectionPoolTestCase {
     @Test
     public void testRelease() throws Exception {
         when(factory.create(any(UsernamePasswordInfo.class))).thenReturn(mc);
-        ManagedConnectionPool pool = new ManagedConnectionPool(factory);
+        ManagedConnectionPool pool = new ManagedConnectionPool(log, factory);
         pool.start();
         pool.release(pool.get());
 
@@ -104,7 +107,7 @@ public class ManagedConnectionPoolTestCase {
     @Test
     public void testDiscard() throws Exception {
         when(factory.create(any(UsernamePasswordInfo.class))).thenReturn(mc);
-        ManagedConnectionPool pool = new ManagedConnectionPool(factory);
+        ManagedConnectionPool pool = new ManagedConnectionPool(log, factory);
         pool.start();
         pool.discard(pool.get());
 
@@ -119,7 +122,7 @@ public class ManagedConnectionPoolTestCase {
     public void testGetWaitTimeout() throws Exception {
         when(factory.create(any(UsernamePasswordInfo.class))).thenReturn(mc);
         when(factory.validate(mc)).thenReturn(true);
-        ManagedConnectionPool pool = new ManagedConnectionPool(factory);
+        ManagedConnectionPool pool = new ManagedConnectionPool(log, factory);
         pool.setPoolMax(1);
         pool.setWaiterTimeout(100);
         pool.start();
@@ -145,7 +148,7 @@ public class ManagedConnectionPoolTestCase {
 
         when(factory.create(any(UsernamePasswordInfo.class))).thenReturn(mc);
         when(factory.validate(mc)).thenReturn(true);
-        final ManagedConnectionPool pool = new ManagedConnectionPool(factory);
+        final ManagedConnectionPool pool = new ManagedConnectionPool(log, factory);
         pool.setPoolMax(1);
         pool.setWaiterTimeout(100);
         pool.start();
@@ -173,7 +176,7 @@ public class ManagedConnectionPoolTestCase {
         when(factory.create(any(UsernamePasswordInfo.class))).thenReturn(mc);
         when(factory.validate(mc)).thenReturn(true);
 
-        final ManagedConnectionPool pool = new ManagedConnectionPool(factory);
+        final ManagedConnectionPool pool = new ManagedConnectionPool(log, factory);
         pool.setPoolMax(1);
         pool.start();
 

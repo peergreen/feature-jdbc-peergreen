@@ -12,6 +12,7 @@
 package com.peergreen.jdbc.internal.cm.pool.internal.ds;
 
 import com.peergreen.jdbc.internal.cm.pool.internal.UsernamePasswordInfo;
+import com.peergreen.jdbc.internal.log.Log;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
@@ -36,6 +37,8 @@ public class DataSourceNativeConnectionBuilderTestCase {
     @Mock
     private DataSource source;
     @Mock
+    private Log log;
+    @Mock
     private Connection connection;
 
     @BeforeMethod
@@ -46,20 +49,20 @@ public class DataSourceNativeConnectionBuilderTestCase {
     @Test
     public void testBuildEmptyPassword() throws Exception {
         when(source.getConnection()).thenReturn(connection);
-        DataSourceNativeConnectionBuilder builder = new DataSourceNativeConnectionBuilder(source);
+        DataSourceNativeConnectionBuilder builder = new DataSourceNativeConnectionBuilder(log, source);
         assertEquals(builder.build(new UsernamePasswordInfo("", "")), connection);
     }
 
     @Test
     public void testBuild() throws Exception {
         when(source.getConnection("guillaume", "secret")).thenReturn(connection);
-        DataSourceNativeConnectionBuilder builder = new DataSourceNativeConnectionBuilder(source);
+        DataSourceNativeConnectionBuilder builder = new DataSourceNativeConnectionBuilder(log, source);
         assertEquals(builder.build(new UsernamePasswordInfo("guillaume", "secret")), connection);
     }
 
     @Test
     public void testSetLoginTimeoutIsPropagated() throws Exception {
-        DataSourceNativeConnectionBuilder builder = new DataSourceNativeConnectionBuilder(source);
+        DataSourceNativeConnectionBuilder builder = new DataSourceNativeConnectionBuilder(log, source);
         builder.setLoginTimeout(42);
         verify(source).setLoginTimeout(42);
     }

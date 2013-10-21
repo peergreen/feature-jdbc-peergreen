@@ -14,6 +14,7 @@ package com.peergreen.jdbc.internal.cm.pool.internal;
 import com.peergreen.jdbc.internal.cm.ConnectionProxy;
 import com.peergreen.jdbc.internal.cm.IManagedConnection;
 import com.peergreen.jdbc.internal.cm.TransactionIsolation;
+import com.peergreen.jdbc.internal.log.Log;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
@@ -63,6 +64,9 @@ public class ManagedConnectionFactoryTestCase {
     @Mock
     private Statement statement;
 
+    @Mock
+    private Log log;
+
     @BeforeMethod
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -73,7 +77,7 @@ public class ManagedConnectionFactoryTestCase {
 
         when(builder.build(null)).thenReturn(connection);
 
-        ManagedConnectionFactory factory = new ManagedConnectionFactory(builder, listener);
+        ManagedConnectionFactory factory = new ManagedConnectionFactory(log, builder, listener);
         factory.setTransactionIsolation(TransactionIsolation.TRANSACTION_UNDEFINED);
         IManagedConnection mc = factory.create(null);
 
@@ -94,7 +98,7 @@ public class ManagedConnectionFactoryTestCase {
 
         when(builder.build(null)).thenReturn(connection);
 
-        ManagedConnectionFactory factory = new ManagedConnectionFactory(builder, listener);
+        ManagedConnectionFactory factory = new ManagedConnectionFactory(log, builder, listener);
         factory.setTransactionIsolation(TransactionIsolation.TRANSACTION_SERIALIZABLE);
         IManagedConnection mc = factory.create(null);
 
@@ -111,7 +115,7 @@ public class ManagedConnectionFactoryTestCase {
         when(handle.isPhysicallyClosed()).thenReturn(false);
 */
 
-        ManagedConnectionFactory factory = new ManagedConnectionFactory(builder, listener);
+        ManagedConnectionFactory factory = new ManagedConnectionFactory(log, builder, listener);
         assertTrue(factory.validate(mc));
         verifyZeroInteractions(mc);
     }
@@ -122,7 +126,7 @@ public class ManagedConnectionFactoryTestCase {
         when(mc.getConnectionProxy()).thenReturn(handle);
         when(handle.isPhysicallyClosed()).thenReturn(false);
 
-        ManagedConnectionFactory factory = new ManagedConnectionFactory(builder, listener);
+        ManagedConnectionFactory factory = new ManagedConnectionFactory(log, builder, listener);
         factory.setCheckLevel(1);
         assertTrue(factory.validate(mc));
     }
@@ -133,7 +137,7 @@ public class ManagedConnectionFactoryTestCase {
         when(mc.getConnectionProxy()).thenReturn(handle);
         when(handle.isPhysicallyClosed()).thenReturn(true);
 
-        ManagedConnectionFactory factory = new ManagedConnectionFactory(builder, listener);
+        ManagedConnectionFactory factory = new ManagedConnectionFactory(log, builder, listener);
         factory.setCheckLevel(1);
         assertFalse(factory.validate(mc));
     }
@@ -145,7 +149,7 @@ public class ManagedConnectionFactoryTestCase {
         when(handle.isPhysicallyClosed()).thenReturn(false);
         when(handle.createStatement()).thenReturn(statement);
 
-        ManagedConnectionFactory factory = new ManagedConnectionFactory(builder, listener);
+        ManagedConnectionFactory factory = new ManagedConnectionFactory(log, builder, listener);
         factory.setCheckLevel(2);
         factory.setTestStatement(SELECT_FROM_DUAL);
         assertTrue(factory.validate(mc));
@@ -161,7 +165,7 @@ public class ManagedConnectionFactoryTestCase {
         when(handle.createStatement()).thenReturn(statement);
         when(statement.execute(SELECT_FROM_DUAL)).thenThrow(SQLException.class);
 
-        ManagedConnectionFactory factory = new ManagedConnectionFactory(builder, listener);
+        ManagedConnectionFactory factory = new ManagedConnectionFactory(log, builder, listener);
         factory.setCheckLevel(2);
         factory.setTestStatement(SELECT_FROM_DUAL);
         assertFalse(factory.validate(mc));
@@ -169,7 +173,7 @@ public class ManagedConnectionFactoryTestCase {
 
     @Test
     public void testDestroy() throws Exception {
-        ManagedConnectionFactory factory = new ManagedConnectionFactory(builder, listener);
+        ManagedConnectionFactory factory = new ManagedConnectionFactory(log, builder, listener);
         factory.destroy(mc);
         verify(mc).remove();
     }

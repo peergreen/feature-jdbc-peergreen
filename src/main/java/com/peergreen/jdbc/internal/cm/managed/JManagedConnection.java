@@ -18,8 +18,7 @@ import com.peergreen.jdbc.internal.cm.handle.DefaultConnectionProxy;
 import com.peergreen.jdbc.internal.cm.handle.ErrorNotifierConnectionProxy;
 import com.peergreen.jdbc.internal.cm.pool.internal.ManagedConnectionFactory;
 import com.peergreen.jdbc.internal.cm.statement.ReusablePreparedStatement;
-import org.ow2.util.log.Log;
-import org.ow2.util.log.LogFactory;
+import com.peergreen.jdbc.internal.log.Log;
 
 import javax.sql.ConnectionEvent;
 import javax.sql.ConnectionEventListener;
@@ -49,7 +48,7 @@ public class JManagedConnection implements IManagedConnection {
     /**
      * Logger.
      */
-    private static final Log logger = LogFactory.getLog(JManagedConnection.class);
+    private final Log logger;
 
     public static final int NO_CACHE = 0;
     /**
@@ -132,10 +131,12 @@ public class JManagedConnection implements IManagedConnection {
 
     /**
      * Builds a new managed connection on a JDBC connection.
+     * @param logger
      * @param physicalConnection the physical JDBC Connection.
      * @param factory
      */
-    public JManagedConnection(final Connection physicalConnection, final ManagedConnectionFactory factory) {
+    public JManagedConnection(final Log logger, final Connection physicalConnection, final ManagedConnectionFactory factory) {
+        this.logger = logger;
         this.physicalConnection = physicalConnection;
         this.factory = factory;
 
@@ -300,7 +301,7 @@ public class JManagedConnection implements IManagedConnection {
     private PreparedStatement prepareStatement(final String sql, final int resultSetType, final int resultSetConcurrency)
             throws SQLException {
 
-        logger.debug("sql = {0}", sql);
+        logger.fine("sql = %s", sql);
         // No PreparedStatement pooling
         if (pstmtmax == NO_CACHE) {
             return physicalConnection.prepareStatement(sql, resultSetType, resultSetConcurrency);
@@ -332,7 +333,7 @@ public class JManagedConnection implements IManagedConnection {
      */
     @Override
     public void notifyPsClose(final IPreparedStatement ps) {
-        logger.debug(ps.getSql());
+        logger.fine(ps.getSql());
         synchronized (psList) {
             psOpenNb--;
             if (psList.size() >= pstmtmax) {
@@ -362,7 +363,7 @@ public class JManagedConnection implements IManagedConnection {
 
     @Override
     public void commit(final Xid xid, final boolean b) throws XAException {
-        logger.debug("XA-COMMIT for {0}", xid);
+        logger.fine("XA-COMMIT for %s", xid);
 
         // Commit the transaction
         try {
@@ -390,10 +391,10 @@ public class JManagedConnection implements IManagedConnection {
         // send commit/rollback on each XAResource involved in
         // the transaction.
         if (xaResource.equals(this)) {
-            logger.debug("isSameRM = true {0}", this);
+            logger.fine("isSameRM = true %s", this);
             return true;
         }
-        logger.debug("isSameRM = false {0}", this);
+        logger.fine("isSameRM = false %s", this);
         return false;
 
     }
@@ -406,7 +407,7 @@ public class JManagedConnection implements IManagedConnection {
      */
     @Override
     public void rollback(final Xid xid) throws XAException {
-        logger.debug("XA-ROLLBACK for {0}", xid);
+        logger.fine("XA-ROLLBACK for %s", xid);
 
         // Make sure that we are not in AutoCommit mode
         try {
@@ -439,7 +440,7 @@ public class JManagedConnection implements IManagedConnection {
      */
     @Override
     public void end(final Xid xid, final int flags) throws XAException {
-        logger.debug("XA-END for {0}", xid);
+        logger.fine("XA-END for %s", xid);
     }
 
     /**
@@ -450,7 +451,7 @@ public class JManagedConnection implements IManagedConnection {
      */
     @Override
     public void forget(final Xid xid) throws XAException {
-        logger.debug("XA-FORGET for {0}", xid);
+        logger.fine("XA-FORGET for %s", xid);
     }
 
     /**
@@ -461,7 +462,7 @@ public class JManagedConnection implements IManagedConnection {
      */
     @Override
     public int getTransactionTimeout() throws XAException {
-        logger.debug("getTransactionTimeout for {0}", this);
+        logger.fine("getTransactionTimeout for %s", this);
         return timeout;
     }
 
@@ -474,7 +475,7 @@ public class JManagedConnection implements IManagedConnection {
      */
     @Override
     public int prepare(final Xid xid) throws XAException {
-        logger.debug("XA-PREPARE for {0}", xid);
+        logger.fine("XA-PREPARE for %s", xid);
         // No 2PC on standard JDBC drivers
         return XAResource.XA_OK;
     }
@@ -487,7 +488,7 @@ public class JManagedConnection implements IManagedConnection {
      */
     @Override
     public Xid[] recover(final int flag) throws XAException {
-        logger.debug("XA-RECOVER for {0}", this);
+        logger.fine("XA-RECOVER for %s", this);
         // Not implemented
         return null;
     }
@@ -500,7 +501,7 @@ public class JManagedConnection implements IManagedConnection {
      */
     @Override
     public boolean setTransactionTimeout(final int seconds) throws XAException {
-        logger.debug("setTransactionTimeout to {0} for {1}", seconds, this);
+        logger.fine("setTransactionTimeout to %d seconds for %s", seconds, this);
         timeout = seconds;
         return true;
     }
@@ -513,7 +514,7 @@ public class JManagedConnection implements IManagedConnection {
      */
     @Override
     public void start(final Xid xid, final int flags) throws XAException {
-        logger.debug("XA-START for {0}", xid);
+        logger.fine("XA-START for %s", xid);
     }
 
     // ---------------------------------------------------------------------------------
@@ -635,7 +636,7 @@ public class JManagedConnection implements IManagedConnection {
                     }
                 }
                 if (psOpenNb != 0) {
-                    logger.warn("Bad psOpenNb value = {0}", psOpenNb);
+                    logger.warn("Bad psOpenNb value = %d", psOpenNb);
                     psOpenNb = 0;
                 }
             }
