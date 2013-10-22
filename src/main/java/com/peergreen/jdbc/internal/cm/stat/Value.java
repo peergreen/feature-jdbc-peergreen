@@ -12,24 +12,27 @@
 package com.peergreen.jdbc.internal.cm.stat;
 
 /**
- * Counter represents a counter that is incremented/decremented
- * when a new value is provided.
+ * User: guillaume
+ * Date: 08/10/13
+ * Time: 16:43
  */
-public class Counter implements Updatable {
-    private long latest;
+public class Value implements Updatable {
+    private long value;
     private long minimum = Long.MAX_VALUE;
     private long maximum = Long.MIN_VALUE;
 
-    public Counter() {
-        this(0);
+    public void update(long value) {
+        this.value = value;
+        if (value < minimum) {
+            minimum = value;
+        }
+        if (value > maximum) {
+            maximum = value;
+        }
     }
 
-    public Counter(final long initial) {
-        this.latest = initial;
-    }
-
-    public long getLatest() {
-        return latest;
+    public long getValue() {
+        return value;
     }
 
     public long getMinimum() {
@@ -38,19 +41,5 @@ public class Counter implements Updatable {
 
     public long getMaximum() {
         return maximum;
-    }
-
-    @Override
-    public void update(final long value) {
-        // increment or decrement counter
-        latest += value;
-
-        // Update minimum and maximum values
-        if (latest < minimum) {
-            minimum = latest;
-        }
-        if (latest > maximum) {
-            maximum = latest;
-        }
     }
 }

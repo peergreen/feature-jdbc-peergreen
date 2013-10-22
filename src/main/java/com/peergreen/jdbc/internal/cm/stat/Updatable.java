@@ -16,6 +16,6 @@ package com.peergreen.jdbc.internal.cm.stat;
  * Date: 09/10/13
  * Time: 11:59
  */
-public interface StatVisitor {
-    void visit(String name, long value);
+public interface Updatable {
+    void update(long value);
 }

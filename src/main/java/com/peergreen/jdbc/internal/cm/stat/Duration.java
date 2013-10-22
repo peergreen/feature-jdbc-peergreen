@@ -11,38 +11,29 @@
 
 package com.peergreen.jdbc.internal.cm.stat;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * User: guillaume
  * Date: 08/10/13
  * Time: 16:43
  */
-public class Duration implements StatVisitor {
-    private final String name;
+public class Duration implements Updatable {
     private long values = 0;
     private long total = 0;
     private long minimum = Long.MAX_VALUE;
     private long maximum = Long.MIN_VALUE;
     private double average = 0;
 
-    public Duration(final String name) {
-        this.name = name;
-    }
-
-    public void visit(String name, long value) {
-        if (this.name.equals(name)) {
-            total += value;
-            average = total / ++values;
-            if (value < minimum) {
-                minimum = value;
-            }
-            if (value > maximum) {
-                maximum = value;
-            }
+    public void update(long value) {
+        total += value;
+        average = total / ++values;
+        if (value < minimum) {
+            minimum = value;
         }
-    }
-
-    public String getName() {
-        return name;
+        if (value > maximum) {
+            maximum = value;
+        }
     }
 
     public long getTotal() {
@@ -59,5 +50,9 @@ public class Duration implements StatVisitor {
 
     public double getAverage() {
         return average;
+    }
+
+    public TimeUnit getUnit() {
+        return TimeUnit.MILLISECONDS;
     }
 }

@@ -16,6 +16,9 @@ import com.peergreen.jdbc.internal.cm.TransactionIsolation;
 import com.peergreen.jdbc.internal.cm.pool.internal.ManagedConnectionFactory;
 import com.peergreen.jdbc.internal.cm.pool.internal.ManagedConnectionPool;
 import com.peergreen.jdbc.internal.cm.pool.internal.ds.DataSourceNativeConnectionBuilder;
+import com.peergreen.jdbc.internal.cm.stat.DataSourceStatisticsListener;
+import com.peergreen.jdbc.internal.datasource.mbean.internal.ConnectionPoolStatisticsManagementBean;
+import com.peergreen.jdbc.internal.datasource.mbean.internal.DataSourceManagementBean;
 import com.peergreen.jdbc.internal.datasource.naming.DataSourceReference;
 import com.peergreen.jdbc.internal.log.FormattedLogger;
 import com.peergreen.jdbc.internal.log.Log;
@@ -30,6 +33,7 @@ import org.apache.felix.ipojo.annotations.Validate;
 import org.osgi.service.jdbc.DataSourceFactory;
 import org.osgi.service.jndi.JNDIContextManager;
 
+import javax.management.MalformedObjectNameException;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
@@ -96,6 +100,8 @@ public class DataSourceDataSource extends ForwardingDataSource {
     private ManagedConnectionPool pool;
 
     private Logger parentLogger;
+    private ConnectionPoolStatisticsManagementBean statisticsMBean;
+    private DataSourceManagementBean dataSourceMBean;
 
     public DataSourceDataSource(@Requires(filter = "(osgi.jdbc.driver.class=${driverClass})")
                                 final DataSourceFactory dataSourceFactory,
@@ -235,6 +241,42 @@ public class DataSourceDataSource extends ForwardingDataSource {
         this.samplingPeriod = samplingPeriod;
     }
 
+    public Integer getCheckLevel() {
+        return checkLevel;
+    }
+
+    public Long getMaxAge() {
+        return maxAge;
+    }
+
+    public String getTestStatement() {
+        return testStatement;
+    }
+
+    public TransactionIsolation getTransactionIsolation() {
+        return transactionIsolation;
+    }
+
+    public Integer getPreparedStatementCacheSize() {
+        return preparedStatementCacheSize;
+    }
+
+    public Integer getPoolMin() {
+        return poolMin;
+    }
+
+    public Integer getPoolMax() {
+        return poolMax;
+    }
+
+    public Integer getMaxWaiters() {
+        return maxWaiters;
+    }
+
+    public Long getWaiterTimeout() {
+        return waiterTimeout;
+    }
+
     @Validate
     public void start() throws SQLException {
 
@@ -302,8 +344,10 @@ public class DataSourceDataSource extends ForwardingDataSource {
             pool.setWaiterTimeout(waiterTimeout);
         }
 
-        manager.setDatasourceName(datasourceName);
-        //manager.setSamplingPeriod();
+        // Plug statistic providers
+        DataSourceStatisticsListener listener = new DataSourceStatisticsListener();
+        pool.setPoolLifecycleListener(listener);
+        manager.setConnectionManagerListener(listener);
 
         pool.start();
 
@@ -317,6 +361,17 @@ public class DataSourceDataSource extends ForwardingDataSource {
                 throw new SQLException(format("Cannot rebind DataSource in %s", datasourceName), e);
             }
         }
+
+        // Register MBeans
+        try {
+            statisticsMBean = new ConnectionPoolStatisticsManagementBean(datasourceName, listener);
+            statisticsMBean.start();
+            dataSourceMBean = new DataSourceManagementBean(this, statisticsMBean);
+            dataSourceMBean.start();
+        } catch (MalformedObjectNameException e) {
+            // Ignored
+        }
+
 
     }
 
@@ -343,6 +398,16 @@ public class DataSourceDataSource extends ForwardingDataSource {
 
     @Invalidate
     public void stop() {
+
+        // Deactivate MBeans
+        if (statisticsMBean != null) {
+            statisticsMBean.stop();
+        }
+        if (dataSourceMBean != null) {
+            dataSourceMBean.stop();
+        }
+
+        // Unbind from JNDI
         if (bind) {
             try {
                 Context context = contextManager.newInitialContext();
@@ -393,4 +458,15 @@ public class DataSourceDataSource extends ForwardingDataSource {
         return super.isWrapperFor(iface);
     }
 
+    public String getDataSourceName() {
+        return datasourceName;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public String getUsername() {
+        return username;
+    }
 }

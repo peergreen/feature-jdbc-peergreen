@@ -28,8 +28,6 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.lang.String.format;
-
 /**
  * DataSource implementation. Manage a pool of connections.
  *
@@ -65,15 +63,19 @@ public class ConnectionManager implements ConnectionEventListener {
     private int servedOpen = 0;
 
     /**
-     * DataSource name (mainly for logging purpose)
+     * sampling period in sec.
      */
-    private String dataSourceName;
+    private int samplingPeriod = DEFAULT_SAMPLING; // default sampling period
 
     /**
      * The pool of managed connections.
      */
     private Pool<IManagedConnection, UsernamePasswordInfo> pool;
 
+    /**
+     * Listen to ConnectionManager related events.
+     */
+    private ConnectionManagerListener listener = new EmptyConnectionManagerListener();
 
     /**
      * Constructor for ObjectFactory.
@@ -83,35 +85,15 @@ public class ConnectionManager implements ConnectionEventListener {
         this.transactionManager = transactionManager;
     }
 
-    /**
-     * Gets the name of the datasource.
-     *
-     * @return the name of the datasource
-     */
-    public String getDatasourceName() {
-        return this.dataSourceName;
-    }
-
-    /**
-     * Sets the name of the datasource.
-     *
-     * @param dataSourceName the name of the datasource
-     */
-    public void setDatasourceName(final String dataSourceName) {
-        this.dataSourceName = dataSourceName;
-    }
-
-
     public void setPool(final Pool<IManagedConnection, UsernamePasswordInfo> pool) {
         if (this.pool == null) {
             this.pool = pool;
         }
     }
 
-    /**
-     * sampling period in sec.
-     */
-    private int samplingPeriod = DEFAULT_SAMPLING; // default sampling period
+    public void setConnectionManagerListener(final ConnectionManagerListener listener) {
+        this.listener = listener;
+    }
 
     /**
      * @return sampling period in sec.
@@ -130,95 +112,10 @@ public class ConnectionManager implements ConnectionEventListener {
     }
 
     /**
-     * maximum nb of busy connections in last sampling period.
-     */
-    private int busyMaxRecent = 0;
-
-    /**
-     * @return maximum nb of busy connections in last sampling period.
-     */
-    public int getBusyMaxRecent() {
-        return this.busyMaxRecent;
-    }
-
-    /**
-     * minimum nb of busy connections in last sampling period.
-     */
-    private int busyMinRecent = 0;
-
-    /**
-     * @return minimum nb of busy connections in last sampling period.
-     */
-    public int getBusyMinRecent() {
-        return this.busyMinRecent;
-    }
-
-    /**
-     * total nb of connection leaks. A connection leak occurs when the caller
-     * never issues a close method on the connection.
-     */
-    private int connectionLeaks = 0;
-
-    /**
-     * @return int number of connection leaks.
-     */
-    public int getConnectionLeaks() {
-        return this.connectionLeaks;
-    }
-
-    /**
      * @return int number of xa connection served.
      */
     public int getServedOpen() {
         return this.servedOpen;
-    }
-
-    /**
-     * maximum nb of waiters since datasource creation.
-     */
-    private int waitersHigh = 0;
-
-    /**
-     * @return maximum nb of waiters since the datasource creation.
-     */
-    public int getWaitersHigh() {
-        return this.waitersHigh;
-    }
-
-    /**
-     * maximum nb of waiters in last sampling period.
-     */
-    private int waitersHighRecent = 0;
-
-    /**
-     * @return maximum nb of waiters in last sampling period.
-     */
-    public int getWaitersHighRecent() {
-        return this.waitersHighRecent;
-    }
-
-    /**
-     * max waiting time in milliseconds.
-     */
-    private long waitingHigh = 0;
-
-    /**
-     * @return max waiting time since the datasource creation.
-     */
-    public long getWaitingHigh() {
-        return this.waitingHigh;
-    }
-
-    /**
-     * max waiting time in milliseconds in last sampling period.
-     */
-    private long waitingHighRecent = 0;
-
-    /**
-     * @return max waiting time in last sampling period.
-     */
-    public long getWaitingHighRecent() {
-        return this.waitingHighRecent;
     }
 
     /**
@@ -268,6 +165,7 @@ public class ConnectionManager implements ConnectionEventListener {
                 try {
                     this.logger.fine("enlist XAResource on %s", tx);
                     tx.enlistResource(mc.getXAResource());
+                    listener.connectionEnlisted(tx);
                     ret.setAutoCommit(false);
                 } catch (RollbackException e) {
                     // Although tx has been marked to be rolled back,
@@ -277,6 +175,8 @@ public class ConnectionManager implements ConnectionEventListener {
                     // In case tx is committed, no need to register resource!
                     ret.setAutoCommit(true);
                 } catch (Exception e) {
+
+                    listener.connectionEnlistmentError();
                     this.logger.error("Cannot enlist XAResource, Connection will not be enlisted in a transaction", e);
 
                     // should return connection in the pool XXX
@@ -287,6 +187,7 @@ public class ConnectionManager implements ConnectionEventListener {
             ret.setAutoCommit(true); // in case we do not start a Tx
         }
 
+        listener.connectionServed();
         // return a Connection object
         return ret;
     }
@@ -311,6 +212,7 @@ public class ConnectionManager implements ConnectionEventListener {
                 logger.fine("Reuse a Connection for same transaction");
                 mc.hold();
                 this.servedOpen++;
+                listener.connectionReusedInSameTransaction(transaction);
                 return mc;
             }
         }
@@ -388,6 +290,7 @@ public class ConnectionManager implements ConnectionEventListener {
      */
     public synchronized void freeConnections(final Transaction tx) {
         logger.fine("free connection for Tx = %s", tx);
+        listener.connectionFreedAfterTransactionCompletion(tx);
         IManagedConnection mc = this.transactions.remove(tx);
         if (mc == null) {
             logger.error("pool: no connection found to free for Tx = %s", tx);
@@ -437,6 +340,7 @@ public class ConnectionManager implements ConnectionEventListener {
         if (transaction != null && mc.isClosed()) {
             try {
                 transaction.delistResource(mc.getXAResource(), flag);
+                listener.connectionDelisted(transaction);
             } catch (Exception e) {
                 logger.error("Pool: Exception while delisting resource:", e);
             }

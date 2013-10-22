@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.osgi.service.jdbc.DataSourceFactory;
 import org.osgi.service.jndi.JNDIContextManager;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -54,27 +55,34 @@ public class DataSourceDataSourceTestCase {
     private Context context;
 
     @Mock
-    private DataSource dataSource;
+    private DataSource delegate;
 
     @Mock
     private Connection connection;
 
     @Captor
     private ArgumentCaptor<Properties> properties;
+    private DataSourceDataSource datasource;
 
     @BeforeMethod
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
+        datasource = new DataSourceDataSource(factory, transactionManager, contextManager);
+        datasource.setUrl("jdbc:test");
+        datasource.setUsername("guillaume");
+        datasource.setPassword("s3cr3t");
+        datasource.setDatasourceName("jdbc/Datasource");
+    }
+
+    @AfterMethod
+    public void tearDown() throws Exception {
+        datasource.stop();
+        datasource = null;
     }
 
     @Test
     public void testDataSourceIsCreatedAtStartup() throws Exception {
-        DataSourceDataSource component = new DataSourceDataSource(factory, transactionManager, contextManager);
-        component.setUrl("jdbc:test");
-        component.setUsername("guillaume");
-        component.setPassword("s3cr3t");
-
-        component.start();
+        datasource.start();
 
         verify(factory).createDataSource(properties.capture());
 
@@ -86,50 +94,35 @@ public class DataSourceDataSourceTestCase {
     @Test
     public void testDataSourceGetConnection() throws Exception {
 
-        when(factory.createDataSource(any(Properties.class))).thenReturn(dataSource);
-        when(dataSource.getConnection("guillaume", "s3cr3t")).thenReturn(connection);
+        when(factory.createDataSource(any(Properties.class))).thenReturn(delegate);
+        when(delegate.getConnection("guillaume", "s3cr3t")).thenReturn(connection);
 
-        DataSourceDataSource component = new DataSourceDataSource(factory, transactionManager, contextManager);
-        component.setUrl("jdbc:test");
-        component.setUsername("guillaume");
-        component.setPassword("s3cr3t");
+        datasource.start();
 
-        component.start();
-
-        assertNotNull(component.getConnection());
+        assertNotNull(datasource.getConnection());
 
     }
 
     @Test
     public void testDataSourceGetConnectionWithUserInfo() throws Exception {
 
-        when(factory.createDataSource(any(Properties.class))).thenReturn(dataSource);
-        when(dataSource.getConnection("toto", "tata")).thenReturn(connection);
+        when(factory.createDataSource(any(Properties.class))).thenReturn(delegate);
+        when(delegate.getConnection("toto", "tata")).thenReturn(connection);
 
-        DataSourceDataSource component = new DataSourceDataSource(factory, transactionManager, contextManager);
-        component.setUrl("jdbc:test");
-        component.setUsername("guillaume");
-        component.setPassword("s3cr3t");
+        datasource.start();
 
-        component.start();
-
-        assertNotNull(component.getConnection("toto", "tata"));
+        assertNotNull(datasource.getConnection("toto", "tata"));
 
     }
 
     @Test
     public void testDataSourceIsBoundInJndi() throws Exception {
-        when(factory.createDataSource(any(Properties.class))).thenReturn(dataSource);
+        when(factory.createDataSource(any(Properties.class))).thenReturn(delegate);
         when(contextManager.newInitialContext()).thenReturn(context);
 
-        DataSourceDataSource component = new DataSourceDataSource(factory, transactionManager, contextManager);
-        component.setUrl("jdbc:test");
-        component.setUsername("guillaume");
-        component.setPassword("s3cr3t");
-        component.setBind(true);
-        component.setDatasourceName("jdbc/Datasource");
+        datasource.setBind(true);
 
-        component.start();
+        datasource.start();
         verify(context).rebind(eq("jdbc/Datasource"), any(DataSourceReference.class));
 
     }

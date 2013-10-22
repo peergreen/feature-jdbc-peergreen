@@ -13,6 +13,7 @@ package com.peergreen.jdbc.internal.cm.pool.internal;
 
 import com.peergreen.jdbc.internal.cm.IManagedConnection;
 import com.peergreen.jdbc.internal.cm.pool.PoolFactory;
+import com.peergreen.jdbc.internal.cm.pool.PoolLifecycleListener;
 import com.peergreen.jdbc.internal.log.Log;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -22,14 +23,14 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.sql.SQLException;
-import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -53,6 +54,8 @@ public class ManagedConnectionPoolTestCase {
     private IManagedConnection mc;
     @Mock
     private Log log;
+    @Mock
+    private PoolLifecycleListener lifecycle;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -70,17 +73,19 @@ public class ManagedConnectionPoolTestCase {
         });
 
         ManagedConnectionPool pool = new ManagedConnectionPool(log, factory);
+        pool.setPoolLifecycleListener(lifecycle);
         pool.setPoolMin(10);
         pool.start();
 
-        assertEquals(pool.getOpenedCount(), 10);
         verify(factory, times(10)).create(any(UsernamePasswordInfo.class));
+        verify(lifecycle, times(10)).connectionCreated();
     }
 
     @Test
     public void testGet() throws Exception {
         when(factory.create(any(UsernamePasswordInfo.class))).thenReturn(mc);
         ManagedConnectionPool pool = new ManagedConnectionPool(log, factory);
+        pool.setPoolLifecycleListener(lifecycle);
         pool.start();
 
         assertEquals(pool.getCurrentFree(), 0);
@@ -89,31 +94,33 @@ public class ManagedConnectionPoolTestCase {
 
         assertEquals(pool.getCurrentFree(), 0);
         assertEquals(pool.getCurrentBusy(), 1);
-        assertEquals(pool.getOpenedCount(), 1);
+        verify(lifecycle).connectionCreated();
     }
 
     @Test
     public void testRelease() throws Exception {
         when(factory.create(any(UsernamePasswordInfo.class))).thenReturn(mc);
         ManagedConnectionPool pool = new ManagedConnectionPool(log, factory);
+        pool.setPoolLifecycleListener(lifecycle);
         pool.start();
         pool.release(pool.get());
 
         assertEquals(pool.getCurrentFree(), 1);
         assertEquals(pool.getCurrentBusy(), 0);
-        assertEquals(pool.getOpenedCount(), 1);
+        verify(lifecycle).connectionCreated();
     }
 
     @Test
     public void testDiscard() throws Exception {
         when(factory.create(any(UsernamePasswordInfo.class))).thenReturn(mc);
         ManagedConnectionPool pool = new ManagedConnectionPool(log, factory);
+        pool.setPoolLifecycleListener(lifecycle);
         pool.start();
         pool.discard(pool.get());
 
         assertEquals(pool.getCurrentFree(), 0);
         assertEquals(pool.getCurrentBusy(), 0);
-        assertEquals(pool.getOpenedCount(), 1);
+        verify(lifecycle).connectionCreated();
 
         verify(factory).destroy(mc);
     }
@@ -123,6 +130,7 @@ public class ManagedConnectionPoolTestCase {
         when(factory.create(any(UsernamePasswordInfo.class))).thenReturn(mc);
         when(factory.validate(mc)).thenReturn(true);
         ManagedConnectionPool pool = new ManagedConnectionPool(log, factory);
+        pool.setPoolLifecycleListener(lifecycle);
         pool.setPoolMax(1);
         pool.setWaiterTimeout(100);
         pool.start();
@@ -133,9 +141,11 @@ public class ManagedConnectionPoolTestCase {
         } catch (Exception e) {
             // Expects a timeout
             assertTrue(e instanceof SQLException);
-            assertEquals(pool.getRejectedTimeout(), 1);
             assertEquals(pool.getCurrentBusy(), 1);
-            assertEquals(pool.getWaiterCount(), 1);
+            verify(lifecycle).waiterRejectedTimeout();
+            verify(lifecycle).waiterStartWaiting();
+            verify(lifecycle).waiterStopWaiting(anyLong(), eq(true));
+
             return;
         }
 

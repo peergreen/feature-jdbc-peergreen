@@ -13,7 +13,9 @@ package com.peergreen.jdbc.internal.cm.pool.internal;
 
 import com.peergreen.jdbc.internal.cm.IManagedConnection;
 import com.peergreen.jdbc.internal.cm.pool.AdjustablePool;
+import com.peergreen.jdbc.internal.cm.pool.EmptyPoolLifecycleListener;
 import com.peergreen.jdbc.internal.cm.pool.PoolFactory;
+import com.peergreen.jdbc.internal.cm.pool.PoolLifecycleListener;
 import com.peergreen.jdbc.internal.log.Log;
 
 import java.sql.SQLException;
@@ -73,87 +75,54 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
     private List<IManagedConnection> connections = new LinkedList<>();
 
     /**
-     * total number of opened physical connections since the datasource
-     * creation.
-     */
-    private int openedCount = 0;
-
-    /**
      * default user.
      */
     private String userName = null;
+
     /**
      * default passwd.
      */
     private String password = null;
-    /**
-     * count max waiters during current period.
-     */
-    private int waiterCount = 0;
-    /**
-     * count max waiting time during current period.
-     */
-    private long maxWaitedTime = 0;
-    /**
-     * count max busy connection during current period.
-     */
-    private int busyMax = 0;
-    /**
-     * count min busy connection during current period.
-     */
-    private int busyMin = 0;
+
     /**
      * minimum size of the connection pool.
      */
     private int poolMin = 0;
+
     /**
      * maximum size of the connection pool. default value is "NO LIMIT".
      */
     private int poolMax = NO_LIMIT;
+
     /**
      * max nb of milliseconds to wait for a connection when pool is empty.
      */
     private long waiterTimeout = WAITER_TIMEOUT;
+
     /**
      * max nb of waiters allowed to wait for a Connection.
      */
     private int maxWaiters = DEFAULT_MAX_WAITERS;
+
     /**
      * nb of threads waiting for a Connection.
      */
     private int currentWaiters = 0;
-    /**
-     * total nb of open connection failures because waiter overflow.
-     */
-    private int rejectedFull = 0;
-    /**
-     * total nb of open connection failures because timeout.
-     */
-    private int rejectedTimeout = 0;
-    /**
-     * total nb of waiters since datasource creation.
-     */
-    private int totalWaiterCount = 0;
-    /**
-     * total waiting time in milliseconds.
-     */
-    private long totalWaitedTime = 0;
-    /**
-     * total nb of physical connection failures.
-     */
-    private int connectionFailures = 0;
-    /**
-     * total nb of open connection failures for any other reason.
-     */
-    private int rejectedOther = 0;
+
     /**
      * PreparedStatement cache size
      */
     private int preparedStatementCacheSize = DEFAULT_PREPARED_STATEMENT_CACHE_SIZE;
 
+    private PoolLifecycleListener listener = new EmptyPoolLifecycleListener();
+
     public ManagedConnectionPool(final Log logger, final PoolFactory<IManagedConnection, UsernamePasswordInfo> factory) {
         this.logger = logger;
         this.factory = factory;
+    }
+
+    public void setPoolLifecycleListener(final PoolLifecycleListener listener) {
+        this.listener = listener;
     }
 
     /**
@@ -220,26 +189,6 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
         return password;
     }
 
-    public int getOpenedCount() {
-        return openedCount;
-    }
-
-    public long getMaxWaitedTime() {
-        return maxWaitedTime;
-    }
-
-    public int getWaiterCount() {
-        return waiterCount;
-    }
-
-    public int getBusyMax() {
-        return busyMax;
-    }
-
-    public int getBusyMin() {
-        return busyMin;
-    }
-
     public int getPoolMin() {
         return poolMin;
     }
@@ -268,30 +217,6 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
         return currentWaiters;
     }
 
-    public int getRejectedFull() {
-        return rejectedFull;
-    }
-
-    public int getRejectedTimeout() {
-        return rejectedTimeout;
-    }
-
-    public int getTotalWaiterCount() {
-        return totalWaiterCount;
-    }
-
-    public long getTotalWaitedTime() {
-        return totalWaitedTime;
-    }
-
-    public int getConnectionFailures() {
-        return connectionFailures;
-    }
-
-    public int getRejectedOther() {
-        return rejectedOther;
-    }
-
     public int getCurrentOpened() {
         return connections.size();
     }
@@ -314,11 +239,12 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
         for (IManagedConnection connection : available) {
             availables.remove(connection);
             factory.destroy(connection);
+            listener.connectionDestroyed();
         }
 
         // Then discard connections
-        List<IManagedConnection> used = new ArrayList<>(connections);
-        for (IManagedConnection connection : used) {
+        List<IManagedConnection> all = new ArrayList<>(connections);
+        for (IManagedConnection connection : all) {
             discard(connection);
         }
     }
@@ -327,13 +253,7 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
      * compute current min/max busyConnections.
      */
     public void recomputeBusy() {
-        int busy = getCurrentBusy();
-        if (this.busyMax < busy) {
-            this.busyMax = busy;
-        }
-        if (this.busyMin > busy) {
-            this.busyMin = busy;
-        }
+        listener.busyConnections(getCurrentBusy());
     }
 
     /**
@@ -369,6 +289,8 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
         }
         recomputeBusy();
 
+        // This section should not be useful with leak detection system
+        // We may use discard() here
         // Close (physically) connections lost (opened for too long time)
         for (Iterator<IManagedConnection> i = this.connections.iterator(); i.hasNext(); ) {
             IManagedConnection mc = i.next();
@@ -377,6 +299,7 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
                 i.remove();
                 // destroy mc
                 factory.destroy(mc);
+                listener.connectionDestroyed();
                 // manager.setConnectionLeaks(manager.getConnectionLeaks() + 1);
                 // Notify 1 thread waiting for a Connection.
                 if (this.currentWaiters > 0) {
@@ -391,7 +314,8 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
             while (this.availables.size() > this.poolMin && this.connections.size() > this.poolMax) {
                 IManagedConnection mc = this.availables.iterator().next();
                 this.availables.remove(mc);
-                discard(mc);
+                // As we're reducing the pool's size, it's not necessary to wake up a waiter
+                discard(mc, false);
             }
         }
         recomputeBusy();
@@ -401,13 +325,18 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
             IManagedConnection mc = null;
             try {
                 mc = factory.create(new UsernamePasswordInfo(userName, password));
-                openedCount++;
+                listener.connectionCreated();
             } catch (Exception e) {
                 throw new IllegalStateException("Could not create " + this.poolMin + " mcs in the pool : ", e);
             }
             // tx = null. Assumes maxage already configured.
             this.availables.add(mc);
             this.connections.add(mc);
+
+            // Notify 1 thread waiting for a Connection.
+            if (this.currentWaiters > 0) {
+                notify();
+            }
         }
     }
 
@@ -437,16 +366,15 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
                     // If a timeout has been specified, wait, unless maxWaiters
                     // is reached.
                     if (timeout > 0) {
-                        if (this.currentWaiters < this.maxWaiters) {
+                        if (isWaitPossible()) {
                             this.currentWaiters++;
-                            // Store the maximum concurrent waiters
-                            if (this.waiterCount < this.currentWaiters) {
-                                this.waiterCount = this.currentWaiters;
-                            }
+
                             if (before == 0) {
                                 before = System.currentTimeMillis();
                                 logger.fine("Wait for a free Connection, %d", this.connections.size());
                             }
+
+                            listener.waiterStartWaiting();
 
                             try {
                                 wait(timeout);
@@ -459,36 +387,29 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
                             long waited = after - before;
                             timeout = this.waiterTimeout - waited;
                             expired = (timeout <= 0);
-                            if (expired) {
-                                // We have been waked up by the timeout.
-                                this.totalWaiterCount++;
-                                this.totalWaitedTime += waited;
-                                if (this.maxWaitedTime < waited) {
-                                    this.maxWaitedTime = waited;
-                                }
-                            } else {
+
+                            listener.waiterStopWaiting(timeout, expired);
+
+                            if (!expired) {
+                                // I'm really not sure that we should test connection pseudo availability here
+                                // We have been notified by a released connection
                                 if (!this.availables.isEmpty() || this.connections.size() < this.poolMax) {
-                                    // We have been notified by a released connection
                                     logger.fine("Notified after %d milliseconds", waited);
-                                    this.totalWaiterCount++;
-                                    this.totalWaitedTime += waited;
-                                    if (this.maxWaitedTime < waited) {
-                                        this.maxWaitedTime = waited;
-                                    }
-                                }
-                                continue;
+                                    // Go to the beginning of the loop (there should be a connection for us)
+                                    continue;
+                                } // else: no connection left, strange case, should not happen
                             }
                         }
                     }
                     if (expired && this.availables.isEmpty() && isMaximumSizeReached()) {
                         if (before > 0) {
-                            this.rejectedTimeout++;
+                            listener.waiterRejectedTimeout();
                             logger.warn("Cannot create a Connection - timeout");
                         } else {
-                            this.rejectedFull++;
+                            listener.waiterRejectedOverflow();
                             logger.warn("Cannot create a Connection");
                         }
-                        throw new SQLException("No more connections in <DATASOURCE>");
+                        throw new SQLException("No more connections");
                     }
                     continue;
                 }
@@ -496,10 +417,9 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
                 try {
                     // create a new ManagedConnection
                     mc = factory.create(info);
-                    openedCount++;
+                    listener.connectionCreated();
                 } catch (Exception e) {
-                    connectionFailures++;
-                    rejectedOther++;
+                    listener.waiterRejectedFailure();
                     logger.warn("Cannot create new Connection for transaction", e);
                     throw e;
                 }
@@ -510,8 +430,11 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
                 // Check the connection before reusing it
                 if (!factory.validate(mc)) {
                     factory.destroy(mc);
+                    listener.connectionDestroyed();
                     before = 0;
                     mc = null;
+                } else {
+                    listener.connectionValidated();
                 }
             }
         }
@@ -520,6 +443,10 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
         mc.setPstmtMax(preparedStatementCacheSize);
         recomputeBusy();
         return mc;
+    }
+
+    private boolean isWaitPossible() {
+        return this.currentWaiters < this.maxWaiters;
     }
 
     private boolean isMaximumSizeReached() {
@@ -548,16 +475,29 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
     }
 
     /**
-     * Destroy an mc because connection closed or error occured.
+     * Destroy an mc because connection closed or error occurred.
+     * Notify a waiter (if any) that a connection may be available.
+     * Calls {@link #discard(com.peergreen.jdbc.internal.cm.IManagedConnection, boolean)} with {@literal true}.
      *
      * @param mc The mc to be destroyed
      */
     @Override
     public synchronized void discard(final IManagedConnection mc) {
+        discard(mc, true);
+    }
+
+    /**
+     * Destroy an mc because connection closed or error occurred.
+     *
+     * @param mc The mc to be destroyed
+     * @param notify if any waiter thread should be notified
+     */
+    public synchronized void discard(final IManagedConnection mc, boolean notify) {
         this.connections.remove(mc);
         factory.destroy(mc);
+        listener.connectionDestroyed();
         // Notify 1 thread waiting for a Connection.
-        if (this.currentWaiters > 0) {
+        if (notify && (this.currentWaiters > 0)) {
             notify();
         }
         recomputeBusy();
