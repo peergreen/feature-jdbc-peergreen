@@ -132,7 +132,7 @@ public class DataSourceManagementBean implements DataSourceMXBean {
 
     @Override
     public void setPoolWaiterTimeout(final long timeout) {
-        delegate.setWaiterTimeout(timeout);
+        delegate.setWaiterTimeoutMillis(timeout);
     }
 
     @Override
@@ -162,7 +162,7 @@ public class DataSourceManagementBean implements DataSourceMXBean {
 
     @Override
     public void setJdbcMaxAge(final long maxAge) {
-        delegate.setMaxAge(maxAge);
+        delegate.setMaxAgeMillis(maxAge);
     }
 
     @Override

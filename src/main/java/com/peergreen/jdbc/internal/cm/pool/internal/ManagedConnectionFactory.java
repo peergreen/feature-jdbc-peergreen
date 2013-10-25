@@ -120,7 +120,7 @@ public class ManagedConnectionFactory implements PoolFactory<IManagedConnection,
         return this.maxOpenTime;
     }
 
-    public void setMaxOpenTime(final long maxOpenTime) {
+    public void setMaxOpenTimeMillis(final long maxOpenTime) {
         this.maxOpenTime = maxOpenTime;
     }
 
@@ -134,7 +134,7 @@ public class ManagedConnectionFactory implements PoolFactory<IManagedConnection,
     /**
      * @param age max age of connection in milliseconds.
      */
-    public void setMaxAge(final long age) {
+    public void setMaxAgeMillis(final long age) {
         this.maxAge = age;
     }
 

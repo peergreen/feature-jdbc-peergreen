@@ -37,6 +37,7 @@ import javax.management.MalformedObjectNameException;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.transaction.TransactionManager;
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -55,8 +56,8 @@ import static java.lang.String.format;
  * Time: 16:14
  */
 @Component
-@Provides(specifications = javax.sql.DataSource.class)
-public class DataSource extends ForwardingDataSource {
+@Provides
+public class DataSource implements javax.sql.DataSource {
 
     @Property(mandatory = true)
     private String driverClass;
@@ -143,7 +144,7 @@ public class DataSource extends ForwardingDataSource {
         this.bind = bind;
     }
 
-    @Property(name = Constants.JDBC_CHECK_LEVEL)
+    @Property(name = Constants.JDBC_CHECK_LEVEL, value = "0")
     public void setCheckLevel(final Integer checkLevel) {
         this.checkLevel = checkLevel;
         if (factory != null) {
@@ -151,19 +152,19 @@ public class DataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = Constants.JDBC_MAX_AGE)
-    public void setMaxAge(final Long maxAge) {
+    @Property(name = Constants.JDBC_MAX_AGE, value = "86400000")
+    public void setMaxAgeMillis(final Long maxAge) {
         this.maxAge = maxAge;
         if (factory != null) {
-            factory.setMaxAge(maxAge);
+            factory.setMaxAgeMillis(maxAge);
         }
     }
 
-    @Property(name = Constants.JDBC_MAX_OPENTIME)
-    public void setMaxOpenTime(final Long maxOpenTime) {
+    @Property(name = Constants.JDBC_MAX_OPENTIME, value = "86400000")
+    public void setMaxOpenTimeMillis(final Long maxOpenTime) {
         this.maxOpenTime = maxOpenTime;
         if (factory != null) {
-            factory.setMaxOpenTime(maxOpenTime);
+            factory.setMaxOpenTimeMillis(maxOpenTime);
         }
     }
 
@@ -175,7 +176,7 @@ public class DataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = Constants.JDBC_TRANSACTION_ISOLATION)
+    @Property(name = Constants.JDBC_TRANSACTION_ISOLATION, value = "TRANSACTION_UNDEFINED")
     public void setTransactionIsolation(final TransactionIsolation transactionIsolation) {
         this.transactionIsolation = transactionIsolation;
         if (factory != null) {
@@ -183,7 +184,7 @@ public class DataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = Constants.JDBC_PREPAREDSTATEMENT_CACHESIZE)
+    @Property(name = Constants.JDBC_PREPAREDSTATEMENT_CACHESIZE, value = "0")
     public void setPreparedStatementCacheSize(final Integer preparedStatementCacheSize) {
         this.preparedStatementCacheSize = preparedStatementCacheSize;
         if (pool != null) {
@@ -191,7 +192,7 @@ public class DataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = Constants.POOL_MIN)
+    @Property(name = Constants.POOL_MIN, value = "0")
     public void setPoolMin(final Integer poolMin) {
         this.poolMin = poolMin;
         if (pool != null) {
@@ -199,7 +200,7 @@ public class DataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = Constants.POOL_MAX)
+    @Property(name = Constants.POOL_MAX, value = "99999")
     public void setPoolMax(final Integer poolMax) {
         this.poolMax = poolMax;
         if (pool != null) {
@@ -207,7 +208,7 @@ public class DataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = Constants.POOL_WAITERS_MAX)
+    @Property(name = Constants.POOL_WAITERS_MAX, value = "1000")
     public void setMaxWaiters(final Integer maxWaiters) {
         this.maxWaiters = maxWaiters;
         if (pool != null) {
@@ -215,11 +216,11 @@ public class DataSource extends ForwardingDataSource {
         }
     }
 
-    @Property(name = Constants.POOL_WAITERS_TIMEOUT)
-    public void setWaiterTimeout(final Long waiterTimeout) {
+    @Property(name = Constants.POOL_WAITERS_TIMEOUT, value = "10000")
+    public void setWaiterTimeoutMillis(final Long waiterTimeout) {
         this.waiterTimeout = waiterTimeout;
         if (pool != null) {
-            pool.setWaiterTimeout(waiterTimeout);
+            pool.setWaiterTimeoutMillis(waiterTimeout);
         }
     }
 
@@ -308,10 +309,10 @@ public class DataSource extends ForwardingDataSource {
         }
 
         if (maxAge != null) {
-            factory.setMaxAge(maxAge);
+            factory.setMaxAgeMillis(maxAge);
         }
         if (maxOpenTime != null) {
-            factory.setMaxOpenTime(maxOpenTime);
+            factory.setMaxOpenTimeMillis(maxOpenTime);
         }
         if (testStatement != null) {
             factory.setTestStatement(testStatement);
@@ -340,7 +341,7 @@ public class DataSource extends ForwardingDataSource {
             pool.setMaxWaiters(maxWaiters);
         }
         if (waiterTimeout != null) {
-            pool.setWaiterTimeout(waiterTimeout);
+            pool.setWaiterTimeoutMillis(waiterTimeout);
         }
 
         // Plug statistic providers
@@ -421,11 +422,6 @@ public class DataSource extends ForwardingDataSource {
     }
 
     @Override
-    protected javax.sql.DataSource delegate() {
-        return delegate;
-    }
-
-    @Override
     public Connection getConnection() throws SQLException {
         return manager.getConnection();
     }
@@ -437,24 +433,12 @@ public class DataSource extends ForwardingDataSource {
 
     @Override
     public <T> T unwrap(final Class<T> iface) throws SQLException {
-        if (!isWrapperFor(iface)) {
-            throw new SQLException(format("Class (interface) %s is not superclass of" +
-                                          " (resp. implemented by) this DataSource type %s",
-                                          iface.getName(),
-                                          getClass().getName()));
-        }
-        if (iface.isAssignableFrom(getClass())) {
-            return iface.cast(this);
-        }
-        return super.unwrap(iface);
+        throw new SQLException(format("DataSource does not supports the Wrapper interface"));
     }
 
     @Override
     public boolean isWrapperFor(final Class<?> iface) throws SQLException {
-        if (iface.isAssignableFrom(getClass())) {
-            return true;
-        }
-        return super.isWrapperFor(iface);
+        return false;
     }
 
     public String getDataSourceName() {
@@ -467,5 +451,31 @@ public class DataSource extends ForwardingDataSource {
 
     public String getUsername() {
         return username;
+    }
+
+    @Override
+    public PrintWriter getLogWriter() throws SQLException {
+        // TODO Not supported
+        return null;
+    }
+
+    @Override
+    public void setLogWriter(final PrintWriter out) throws SQLException {
+        // TODO Not supported
+        // Javadoc says that initially logging is disabled (writer == null).
+        // If a writer is provided, all the logs of this datasource should go through this writer
+        // Theoretically, we should honor that settings and construct a dedicated Handler for the parent Logger
+        // that's kind of weird because this is the kind of things you do through your log system configuration ...
+    }
+
+    @Override
+    public void setLoginTimeout(final int seconds) throws SQLException {
+        // TODO Not supported
+    }
+
+    @Override
+    public int getLoginTimeout() throws SQLException {
+        // TODO Not supported
+        return 0;
     }
 }

@@ -197,7 +197,7 @@ public class ManagedConnectionPool implements AdjustablePool<IManagedConnection,
         return poolMax;
     }
 
-    public void setWaiterTimeout(final long waiterTimeout) {
+    public void setWaiterTimeoutMillis(final long waiterTimeout) {
         this.waiterTimeout = waiterTimeout;
     }
 

@@ -132,7 +132,7 @@ public class ManagedConnectionPoolTestCase {
         ManagedConnectionPool pool = new ManagedConnectionPool(log, factory);
         pool.setPoolLifecycleListener(lifecycle);
         pool.setPoolMax(1);
-        pool.setWaiterTimeout(100);
+        pool.setWaiterTimeoutMillis(100);
         pool.start();
 
         pool.get();
@@ -160,7 +160,7 @@ public class ManagedConnectionPoolTestCase {
         when(factory.validate(mc)).thenReturn(true);
         final ManagedConnectionPool pool = new ManagedConnectionPool(log, factory);
         pool.setPoolMax(1);
-        pool.setWaiterTimeout(100);
+        pool.setWaiterTimeoutMillis(100);
         pool.start();
 
         // Get the one connection from the pool
