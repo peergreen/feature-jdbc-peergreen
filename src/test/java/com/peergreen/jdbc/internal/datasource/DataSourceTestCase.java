@@ -23,7 +23,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import javax.naming.Context;
-import javax.sql.DataSource;
 import javax.transaction.TransactionManager;
 import java.sql.Connection;
 import java.util.Properties;
@@ -40,7 +39,7 @@ import static org.testng.Assert.assertNotNull;
  * Date: 16/09/13
  * Time: 14:06
  */
-public class DataSourceDataSourceTestCase {
+public class DataSourceTestCase {
 
     @Mock
     private DataSourceFactory factory;
@@ -55,19 +54,19 @@ public class DataSourceDataSourceTestCase {
     private Context context;
 
     @Mock
-    private DataSource delegate;
+    private javax.sql.DataSource delegate;
 
     @Mock
     private Connection connection;
 
     @Captor
     private ArgumentCaptor<Properties> properties;
-    private DataSourceDataSource datasource;
+    private DataSource datasource;
 
     @BeforeMethod
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        datasource = new DataSourceDataSource(factory, transactionManager, contextManager);
+        datasource = new DataSource(factory, transactionManager, contextManager);
         datasource.setUrl("jdbc:test");
         datasource.setUsername("guillaume");
         datasource.setPassword("s3cr3t");

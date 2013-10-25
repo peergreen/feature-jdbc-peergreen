@@ -12,7 +12,7 @@
 package com.peergreen.jdbc.internal.datasource.mbean.internal;
 
 import com.peergreen.jdbc.internal.cm.TransactionIsolation;
-import com.peergreen.jdbc.internal.datasource.DataSourceDataSource;
+import com.peergreen.jdbc.internal.datasource.DataSource;
 import com.peergreen.jdbc.internal.datasource.mbean.ConnectionStatisticsMXBean;
 import com.peergreen.jdbc.internal.datasource.mbean.DataSourceMXBean;
 
@@ -34,12 +34,12 @@ import static java.lang.String.format;
  * Time: 16:52
  */
 public class DataSourceManagementBean implements DataSourceMXBean {
-    private final DataSourceDataSource delegate;
+    private final DataSource delegate;
     private final ConnectionStatisticsMXBean statistics;
     private final MBeanServer server;
     private final ObjectName name;
 
-    public DataSourceManagementBean(final DataSourceDataSource delegate, final ConnectionStatisticsMXBean statistics) throws MalformedObjectNameException {
+    public DataSourceManagementBean(final DataSource delegate, final ConnectionStatisticsMXBean statistics) throws MalformedObjectNameException {
         this.delegate = delegate;
         this.statistics = statistics;
         server = ManagementFactory.getPlatformMBeanServer();

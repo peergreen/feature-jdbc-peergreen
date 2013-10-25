@@ -36,7 +36,6 @@ import org.osgi.service.jndi.JNDIContextManager;
 import javax.management.MalformedObjectNameException;
 import javax.naming.Context;
 import javax.naming.NamingException;
-import javax.sql.DataSource;
 import javax.transaction.TransactionManager;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -56,8 +55,8 @@ import static java.lang.String.format;
  * Time: 16:14
  */
 @Component
-@Provides(specifications = DataSource.class)
-public class DataSourceDataSource extends ForwardingDataSource {
+@Provides(specifications = javax.sql.DataSource.class)
+public class DataSource extends ForwardingDataSource {
 
     @Property(mandatory = true)
     private String driverClass;
@@ -91,7 +90,7 @@ public class DataSourceDataSource extends ForwardingDataSource {
     private final TransactionManager transactionManager;
     private final JNDIContextManager contextManager;
 
-    private DataSource delegate;
+    private javax.sql.DataSource delegate;
 
     private Dictionary<String, Object> properties = new Hashtable<>();
     private ConnectionManager manager;
@@ -103,10 +102,10 @@ public class DataSourceDataSource extends ForwardingDataSource {
     private ConnectionPoolStatisticsManagementBean statisticsMBean;
     private DataSourceManagementBean dataSourceMBean;
 
-    public DataSourceDataSource(@Requires(filter = "(osgi.jdbc.driver.class=${driverClass})")
-                                final DataSourceFactory dataSourceFactory,
-                                @Requires TransactionManager transactionManager,
-                                @Requires JNDIContextManager contextManager) {
+    public DataSource(@Requires(filter = "(osgi.jdbc.driver.class=${driverClass})")
+                      final DataSourceFactory dataSourceFactory,
+                      @Requires TransactionManager transactionManager,
+                      @Requires JNDIContextManager contextManager) {
         this.dataSourceFactory = dataSourceFactory;
         this.transactionManager = transactionManager;
         this.contextManager = contextManager;
@@ -114,7 +113,7 @@ public class DataSourceDataSource extends ForwardingDataSource {
 
     private String getDataSourceLoggerName() {
         // Expecting something like:
-        // com.peergreen.jdbc.internal.datasource.DataSourceDataSource[jdbc/MyDataSource]
+        // com.peergreen.jdbc.internal.datasource.DataSource[jdbc/MyDataSource]
         return format("%s[%s]", getClass().getName(), datasourceName);
     }
 
@@ -355,7 +354,7 @@ public class DataSourceDataSource extends ForwardingDataSource {
         if (bind) {
             try {
                 Context context = contextManager.newInitialContext();
-                context.rebind(datasourceName, new DataSourceReference(DataSourceDataSource.class.getName(), datasourceName));
+                context.rebind(datasourceName, new DataSourceReference(DataSource.class.getName(), datasourceName));
                 context.close();
             } catch (NamingException e) {
                 throw new SQLException(format("Cannot rebind DataSource in %s", datasourceName), e);
@@ -422,7 +421,7 @@ public class DataSourceDataSource extends ForwardingDataSource {
     }
 
     @Override
-    protected DataSource delegate() {
+    protected javax.sql.DataSource delegate() {
         return delegate;
     }
 

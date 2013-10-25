@@ -11,11 +11,11 @@
 
 package com.peergreen.jdbc.internal.datasource.deploy.processor;
 
-import com.peergreen.deployment.ProcessorContext;
-import com.peergreen.deployment.ProcessorException;
-import com.peergreen.deployment.processor.Phase;
-import com.peergreen.deployment.processor.Processor;
-import com.peergreen.jdbc.internal.datasource.deploy.DataSourceInfo;
+import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.util.concurrent.CountDownLatch;
+
 import org.apache.felix.ipojo.ComponentInstance;
 import org.apache.felix.ipojo.ConfigurationException;
 import org.apache.felix.ipojo.Factory;
@@ -24,10 +24,11 @@ import org.apache.felix.ipojo.MissingHandlerException;
 import org.apache.felix.ipojo.UnacceptableConfiguration;
 import org.apache.felix.ipojo.annotations.Requires;
 
-import java.util.concurrent.CountDownLatch;
-
-import static java.lang.String.format;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import com.peergreen.deployment.ProcessorContext;
+import com.peergreen.deployment.ProcessorException;
+import com.peergreen.deployment.processor.Phase;
+import com.peergreen.deployment.processor.Processor;
+import com.peergreen.jdbc.internal.datasource.deploy.DataSourceInfo;
 
 @Processor
 @Phase("ds-start")
@@ -36,7 +37,7 @@ public class DataSourceStartProcessor {
     public static final int ONE = 1;
     private final Factory datasource;
 
-    public DataSourceStartProcessor(@Requires(from = "com.peergreen.jdbc.internal.datasource.DataSourceDataSource") Factory datasource) {
+    public DataSourceStartProcessor(@Requires(from = "com.peergreen.jdbc.internal.datasource.DataSource") Factory datasource) {
         this.datasource = datasource;
     }
 
