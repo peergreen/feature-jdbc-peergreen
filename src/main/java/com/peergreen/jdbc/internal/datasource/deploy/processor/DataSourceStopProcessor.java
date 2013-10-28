@@ -16,18 +16,6 @@ import com.peergreen.deployment.ProcessorException;
 import com.peergreen.deployment.processor.Phase;
 import com.peergreen.deployment.processor.Processor;
 import com.peergreen.jdbc.internal.datasource.deploy.DataSourceInfo;
-import org.apache.felix.ipojo.ComponentInstance;
-import org.apache.felix.ipojo.ConfigurationException;
-import org.apache.felix.ipojo.Factory;
-import org.apache.felix.ipojo.InstanceStateListener;
-import org.apache.felix.ipojo.MissingHandlerException;
-import org.apache.felix.ipojo.UnacceptableConfiguration;
-import org.apache.felix.ipojo.annotations.Requires;
-
-import java.util.concurrent.CountDownLatch;
-
-import static java.lang.String.format;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 @Processor
 @Phase("ds-stop")

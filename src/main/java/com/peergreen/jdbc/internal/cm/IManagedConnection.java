@@ -12,7 +12,6 @@
 package com.peergreen.jdbc.internal.cm;
 
 import javax.sql.XAConnection;
-import javax.transaction.Synchronization;
 import javax.transaction.Transaction;
 import javax.transaction.xa.XAResource;
 import java.sql.PreparedStatement;

@@ -19,7 +19,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import javax.sql.DataSource;
-
 import java.sql.Connection;
 
 import static org.mockito.Mockito.verify;

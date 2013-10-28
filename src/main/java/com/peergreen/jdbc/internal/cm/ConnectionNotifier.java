@@ -11,8 +11,6 @@
 
 package com.peergreen.jdbc.internal.cm;
 
-import com.peergreen.jdbc.internal.cm.statement.ReusablePreparedStatement;
-
 import java.sql.SQLException;
 
 /**

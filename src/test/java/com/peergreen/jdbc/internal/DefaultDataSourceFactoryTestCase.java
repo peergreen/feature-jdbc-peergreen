@@ -28,7 +28,6 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
 
 /**
