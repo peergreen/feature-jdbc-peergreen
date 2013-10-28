@@ -51,8 +51,4 @@ public interface DataSourceMXBean {
 
     int getJdbcPreparedStatementCacheSize();
     void setJdbcPreparedStatementCacheSize(int cacheSize);
-
-    ConnectionStatisticsMXBean getGlobalConnectionStatistics();
-    ConnectionStatisticsMXBean getLastSampleConnectionStatistics();
-
 }

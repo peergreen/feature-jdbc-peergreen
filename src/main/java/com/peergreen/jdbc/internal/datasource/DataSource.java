@@ -366,7 +366,7 @@ public class DataSource implements javax.sql.DataSource {
         try {
             statisticsMBean = new ConnectionPoolStatisticsManagementBean(datasourceName, listener);
             statisticsMBean.start();
-            dataSourceMBean = new DataSourceManagementBean(this, statisticsMBean);
+            dataSourceMBean = new DataSourceManagementBean(this);
             dataSourceMBean.start();
         } catch (MalformedObjectNameException e) {
             // Ignored

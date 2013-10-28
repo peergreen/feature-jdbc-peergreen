@@ -13,7 +13,6 @@ package com.peergreen.jdbc.internal.datasource.mbean.internal;
 
 import com.peergreen.jdbc.internal.cm.TransactionIsolation;
 import com.peergreen.jdbc.internal.datasource.DataSource;
-import com.peergreen.jdbc.internal.datasource.mbean.ConnectionStatisticsMXBean;
 import com.peergreen.jdbc.internal.datasource.mbean.DataSourceMXBean;
 
 import javax.management.InstanceAlreadyExistsException;
@@ -35,13 +34,11 @@ import static java.lang.String.format;
  */
 public class DataSourceManagementBean implements DataSourceMXBean {
     private final DataSource delegate;
-    private final ConnectionStatisticsMXBean statistics;
     private final MBeanServer server;
     private final ObjectName name;
 
-    public DataSourceManagementBean(final DataSource delegate, final ConnectionStatisticsMXBean statistics) throws MalformedObjectNameException {
+    public DataSourceManagementBean(final DataSource delegate) throws MalformedObjectNameException {
         this.delegate = delegate;
-        this.statistics = statistics;
         server = ManagementFactory.getPlatformMBeanServer();
         name = new ObjectName(format("peergreen:type=DataSource,name=%s", delegate.getDataSourceName()));
     }
@@ -183,15 +180,5 @@ public class DataSourceManagementBean implements DataSourceMXBean {
     @Override
     public void setJdbcPreparedStatementCacheSize(final int cacheSize) {
         delegate.setPreparedStatementCacheSize(cacheSize);
-    }
-
-    @Override
-    public ConnectionStatisticsMXBean getGlobalConnectionStatistics() {
-        return statistics;
-    }
-
-    @Override
-    public ConnectionStatisticsMXBean getLastSampleConnectionStatistics() {
-        return null;
     }
 }
