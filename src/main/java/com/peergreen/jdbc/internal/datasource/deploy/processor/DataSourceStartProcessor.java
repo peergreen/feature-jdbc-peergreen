@@ -34,7 +34,7 @@ import com.peergreen.jdbc.internal.datasource.deploy.DataSourceInfo;
 @Phase("ds-start")
 public class DataSourceStartProcessor {
 
-    public static final int ONE = 1;
+    public static final int FIVE = 5;
     private final Factory datasource;
 
     public DataSourceStartProcessor(@Requires(from = "com.peergreen.jdbc.internal.datasource.DataSource") Factory datasource) {
@@ -84,7 +84,7 @@ public class DataSourceStartProcessor {
 
         try {
             // Wait for the instance to become valid
-            if (!latch.await(ONE, SECONDS)) {
+            if (!latch.await(FIVE, SECONDS)) {
                 // Exited on timeout expiration
                 // That means the instance is still not valid now
                 throw new ProcessorException(format("Waited '%s' DataSource to activate for too long, consider it lost.", info.getName()), new Exception());
