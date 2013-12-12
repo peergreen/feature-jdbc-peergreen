@@ -11,6 +11,8 @@
 
 package com.peergreen.jdbc.internal.datasource.deploy.processor;
 
+import org.apache.felix.ipojo.ComponentInstance;
+
 import com.peergreen.deployment.ProcessorContext;
 import com.peergreen.deployment.ProcessorException;
 import com.peergreen.deployment.processor.Phase;
@@ -22,7 +24,10 @@ import com.peergreen.jdbc.internal.datasource.deploy.DataSourceInfo;
 public class DataSourceStopProcessor {
 
     public void handle(DataSourceInfo info, ProcessorContext context) throws ProcessorException {
-        info.getInstance().dispose();
+        ComponentInstance instance = info.getInstance();
+        if (instance != null) {
+            instance.dispose();
+        }
     }
 
 }
