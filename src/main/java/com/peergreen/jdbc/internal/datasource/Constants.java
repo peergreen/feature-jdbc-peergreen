@@ -102,5 +102,4 @@ public interface Constants {
 
     String JDBC_MAX_OPENTIME = "jdbc.max.opentime";
     String LOGIN_TIMEOUT = "login.timeout";
-    String SAMPLING_PERIOD = "sampling.period";
 }

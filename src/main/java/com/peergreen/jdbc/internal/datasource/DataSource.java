@@ -83,7 +83,6 @@ public class DataSource implements javax.sql.DataSource {
     private Integer loginTimeout;
     @ServiceProperty(name = DATASOURCE_NAME, mandatory = true)
     private String datasourceName;
-    private Integer samplingPeriod;
 
     private boolean bind;
 
@@ -234,11 +233,6 @@ public class DataSource implements javax.sql.DataSource {
 
     public void setDatasourceName(final String datasourceName) {
         this.datasourceName = datasourceName;
-    }
-
-    @Property(name = Constants.SAMPLING_PERIOD)
-    public void setSamplingPeriod(final Integer samplingPeriod) {
-        this.samplingPeriod = samplingPeriod;
     }
 
     public Integer getCheckLevel() {
