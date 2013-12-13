@@ -56,8 +56,8 @@ import static java.lang.String.format;
  * Time: 16:14
  */
 @Component(
-        propagation = false // Avoid configuration properties to appear as service properties
-        /*,architecture = false // Do not expose the Architecture service (hide configuration properties) */
+        propagation = false, // Avoid configuration properties to appear as service properties
+        architecture = false // Do not expose the Architecture service (hide configuration properties)
 )
 @Provides
 public class DataSource implements javax.sql.DataSource {
