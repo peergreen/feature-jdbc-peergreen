@@ -30,6 +30,13 @@
     <apache-rat-plugin.ignoreErrors>false</apache-rat-plugin.ignoreErrors>
   </properties>
 
+  <scm>
+    <connection>scm:git:https://forge.peergreen.com/git/git/feature/jdbc/peergreen-jdbc.git</connection>
+    <developerConnection>scm:git:https://forge.peergreen.com/git/git/feature/jdbc/peergreen-jdbc.git</developerConnection>
+    <url>https://forge.peergreen.com/git/summary/?r=feature/jdbc/peergreen-jdbc.git</url>
+    <tag>HEAD</tag>
+  </scm>
+
   <dependencies>
     <dependency>
       <groupId>org.osgi</groupId>
