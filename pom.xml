@@ -16,7 +16,7 @@
   <parent>
     <groupId>com.peergreen</groupId>
     <artifactId>peergreen-pom</artifactId>
-    <version>3.2-SNAPSHOT</version>
+    <version>3.2</version>
   </parent>
 
   <groupId>com.peergreen.jdbc</groupId>
